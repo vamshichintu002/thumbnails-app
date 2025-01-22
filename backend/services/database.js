@@ -147,7 +147,130 @@ const DatabaseService = {
       console.error('Error adding credits:', error);
       throw error;
     }
-  }
+  },
+
+  async logGeneration(userId, generationType, outputImageUrl, creditCost) {
+    console.log('Starting logGeneration with:', {
+      userId,
+      generationType,
+      outputImageUrl,
+      creditCost
+    });
+
+    try {
+      // First, deduct credits
+      console.log('Attempting to deduct credits:', creditCost);
+      await this.deductCredits(userId, creditCost);
+      console.log('Credits deducted successfully');
+
+      // Prepare generation data
+      const generationData = {
+        profile_id: userId,
+        generation_type: generationType,
+        output_image_url: outputImageUrl,
+        credit_cost: creditCost,
+        created_at: new Date().toISOString()
+      };
+      console.log('Generation data to insert:', generationData);
+
+      // Then, log the generation
+      const { data, error } = await supabase
+        .from('generations')
+        .insert(generationData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase error while logging generation:', error);
+        throw error;
+      }
+
+      console.log('Generation logged successfully:', data);
+      return data;
+    } catch (error) {
+      console.error('Error in logGeneration:', error);
+      throw error;
+    }
+  },
+
+  async getGenerationHistory(userId) {
+    console.log('Fetching generation history for user:', userId);
+    try {
+      const { data, error } = await supabase
+        .from('generations')
+        .select(`
+          id,
+          generation_type,
+          output_image_url,
+          credit_cost,
+          created_at
+        `)
+        .eq('profile_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching generation history:', error);
+      throw error;
+    }
+  },
+
+  async initializeGenerationTypes() {
+    console.log('Initializing generation types');
+    try {
+      // First check if types already exist
+      const { data: existingTypes, error: checkError } = await supabase
+        .from('generation_types')
+        .select('type_key');
+
+      if (checkError) {
+        console.error('Error checking existing types:', checkError);
+        throw checkError;
+      }
+
+      if (existingTypes && existingTypes.length > 0) {
+        console.log('Generation types already exist:', existingTypes);
+        return;
+      }
+
+      // Insert default generation types
+      const types = [
+        {
+          type_key: 'text_to_thumbnail',
+          display_name: 'Text to Thumbnail',
+          cost_credits: 10
+        },
+        {
+          type_key: 'image_to_thumbnail',
+          display_name: 'Image to Thumbnail',
+          cost_credits: 15
+        },
+        {
+          type_key: 'youtube_to_thumbnail',
+          display_name: 'YouTube to Thumbnail',
+          cost_credits: 20
+        }
+      ];
+
+      console.log('Inserting generation types:', types);
+      const { data, error } = await supabase
+        .from('generation_types')
+        .insert(types)
+        .select();
+
+      if (error) {
+        console.error('Error inserting generation types:', error);
+        throw error;
+      }
+
+      console.log('Generation types initialized:', data);
+      return data;
+    } catch (error) {
+      console.error('Error in initializeGenerationTypes:', error);
+      throw error;
+    }
+  },
 };
 
 export { DatabaseService };

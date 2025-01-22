@@ -21,7 +21,8 @@ import {
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { UserProfile } from '../components/UserProfile';
-import { GenerationHistory } from '../components/GenerationHistory';
+import { MyCreations } from '../components/MyCreations';
+import { Subscription } from '../components/Subscription';
 
 type GenerationType = 'title' | 'image' | 'youtube' | 'custom';
 type AspectRatio = '16:9' | '9:16';
@@ -31,7 +32,7 @@ type MenuSection = 'create' | 'creations' | 'subscription' | 'logout';
 const YOUTUBE_URL_PATTERN = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
 
 export function Dashboard() {
-  const [credits] = useState(100);
+  const [credits, setCredits] = useState<number | null>(null);
   const [activeSection, setActiveSection] = useState<MenuSection>('create');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -47,6 +48,18 @@ export function Dashboard() {
   const [user, setUser] = useState<any>(null);
   const [generationOption, setGenerationOption] = useState<'style' | 'recreate'>('style');
   const navigate = useNavigate();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+  const [showGeneratedPopup, setShowGeneratedPopup] = useState(false);
+  const [userGenerations, setUserGenerations] = useState<Array<{
+    id: string;
+    output_image_url: string;
+    created_at: string;
+    generation_type: string;
+  }>>([]);
+  const [allGenerations, setAllGenerations] = useState<any[]>([]);
+  const [isLoadingGenerations, setIsLoadingGenerations] = useState(false);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -71,6 +84,79 @@ export function Dashboard() {
 
     fetchUserProfile();
   }, []);
+
+  useEffect(() => {
+    const fetchCredits = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('credits')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching credits:', error);
+          return;
+        }
+
+        if (data) {
+          setCredits(data.credits);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+
+    fetchCredits();
+  }, [user]);
+
+  useEffect(() => {
+    const fetchUserGenerations = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('generations')
+          .select('*')
+          .eq('profile_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setUserGenerations(data || []);
+      } catch (error) {
+        console.error('Error fetching generations:', error);
+      }
+    };
+
+    fetchUserGenerations();
+  }, [user]);
+
+  useEffect(() => {
+    if (activeSection === 'creations') {
+      fetchAllGenerations();
+    }
+  }, [activeSection]);
+
+  const fetchAllGenerations = async () => {
+    if (!user) return;
+    setIsLoadingGenerations(true);
+    try {
+      const { data, error } = await supabase
+        .from('generations')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAllGenerations(data || []);
+    } catch (error) {
+      console.error('Error fetching generations:', error);
+    } finally {
+      setIsLoadingGenerations(false);
+    }
+  };
 
   const templateOptions = [
     { value: 'gaming', label: 'Gaming Thumbnail' },
@@ -147,237 +233,253 @@ export function Dashboard() {
       case 'create':
         return (
           <>
-            {/* Tab Navigation */}
-            <div className="mb-8">
-              <div className="grid grid-cols-3 gap-3 p-2">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = generationType === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setGenerationType(tab.id as GenerationType)}
-                      className={`relative flex items-center justify-center p-4 rounded-xl transition-all duration-300 ${
-                        getSelectionClasses(isActive)
-                      }`}
-                    >
-                      <Icon className="w-6 h-6 text-white" />
-                    </button>
-                  );
-                })}
+            <div className="space-y-8">
+              <div className="flex flex-col gap-4">
+                <h1 className="text-2xl font-bold">Generate Thumbnail</h1>
+                <p className="text-white/60">
+                  Create stunning thumbnails for your content using AI.
+                </p>
               </div>
 
-              {/* Tab Content */}
-              <div className="mt-6 bg-transparent border border-white/10 rounded-xl p-4 md:p-6">
-                {generationType === 'title' && (
-                  <div className="space-y-4">
-                    <label className="block text-sm font-medium text-white/80">Video Title</label>
+              {/* Generation Type Selector */}
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold">Generation Type</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Generation type buttons */}
+                  {tabs.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = generationType === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setGenerationType(tab.id as GenerationType)}
+                        className={`relative flex items-center justify-center p-4 rounded-xl transition-all duration-300 ${
+                          getSelectionClasses(isActive)
+                        }`}
+                      >
+                        <Icon className="w-6 h-6 text-white" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Generation Options */}
+              {generationType === 'title' && (
+                <div className="space-y-4">
+                  <label className="block text-sm font-medium text-white/80">Video Title</label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Enter your prompt"
+                    className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                  />
+                </div>
+              )}
+
+              {generationType === 'image' && (
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-2">Image Description</label>
                     <input
                       type="text"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="Enter your video title"
+                      value={imageText}
+                      onChange={(e) => setImageText(e.target.value)}
+                      placeholder="Describe what you want in the image"
                       className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                     />
                   </div>
-                )}
-
-                {generationType === 'image' && (
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium text-white/80 mb-2">Image Description</label>
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-2">Reference Image (Optional)</label>
+                    <div className="border-2 border-dashed border-white/10 rounded-lg p-4 md:p-8 text-center hover:border-[#3749be] transition-colors">
                       <input
-                        type="text"
-                        value={imageText}
-                        onChange={(e) => setImageText(e.target.value)}
-                        placeholder="Describe what you want in the image"
-                        className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        id="image-upload"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-white/80 mb-2">Reference Image (Optional)</label>
-                      <div className="border-2 border-dashed border-white/10 rounded-lg p-4 md:p-8 text-center hover:border-[#3749be] transition-colors">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileChange}
-                          className="hidden"
-                          id="image-upload"
-                        />
-                        <label htmlFor="image-upload" className="cursor-pointer">
-                          <Upload className="w-10 h-10 mx-auto mb-4 text-white/70" />
-                          <p className="text-sm text-white/70 mb-1">
-                            Drop image or click to browse
-                          </p>
-                          <p className="text-xs text-white/40">
-                            Supports JPG, PNG, WEBP
-                          </p>
-                        </label>
-                      </div>
+                      <label htmlFor="image-upload" className="cursor-pointer">
+                        <Upload className="w-10 h-10 mx-auto mb-4 text-white/70" />
+                        <p className="text-sm text-white/70 mb-1">
+                          Drop image or click to browse
+                        </p>
+                        <p className="text-xs text-white/40">
+                          Supports JPG, PNG, WEBP
+                        </p>
+                      </label>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
-                {generationType === 'youtube' && (
-                  <div className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <label className="block text-sm font-medium text-white/80">YouTube URL</label>
-                        <input
-                          type="text"
-                          value={youtubeUrl}
-                          onChange={(e) => setYoutubeUrl(e.target.value)}
-                          placeholder="Enter YouTube video URL"
-                          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                        />
-                        {youtubeError && (
-                          <div className="flex items-center gap-2 text-red-400 text-sm">
-                            <AlertCircle className="w-4 h-4" />
-                            {youtubeError}
-                          </div>
-                        )}
-                        
-                        {/* YouTube Preview */}
-                        {youtubeUrl && (
-                          <div className="aspect-video w-full max-w-sm rounded-xl border border-white/10 bg-white/5 overflow-hidden">
-                            {youtubePreview ? (
-                              <img
-                                src={youtubePreview}
-                                alt="YouTube Thumbnail"
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-white/40">
-                                <FileVideo className="w-8 h-8" />
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-white/80 mb-2">
-                            Your Photo (Optional)
-                            <span className="block text-xs text-white/60 mt-1">
-                              If you want to be in the thumbnail
-                            </span>
-                          </label>
-                          <div className="border-2 border-dashed border-white/10 rounded-lg p-4 text-center hover:border-[#3749be] transition-colors">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleFileChange}
-                              className="hidden"
-                              id="photo-upload"
+              {generationType === 'youtube' && (
+                <div className="space-y-6">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <label className="block text-sm font-medium text-white/80">YouTube URL</label>
+                      <input
+                        type="text"
+                        value={youtubeUrl}
+                        onChange={(e) => setYoutubeUrl(e.target.value)}
+                        placeholder="Enter YouTube video URL"
+                        className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                      />
+                      {youtubeError && (
+                        <div className="flex items-center gap-2 text-red-400 text-sm">
+                          <AlertCircle className="w-4 h-4" />
+                          {youtubeError}
+                        </div>
+                      )}
+                      
+                      {/* YouTube Preview */}
+                      {youtubeUrl && (
+                        <div className="aspect-video w-full max-w-sm rounded-xl border border-white/10 bg-white/5 overflow-hidden">
+                          {youtubePreview ? (
+                            <img
+                              src={youtubePreview}
+                              alt="YouTube Thumbnail"
+                              className="w-full h-full object-cover"
                             />
-                            <label htmlFor="photo-upload" className="cursor-pointer">
-                              <Upload className="w-8 h-8 mx-auto mb-3 text-white/70" />
-                              <p className="text-sm text-white/70 mb-1">
-                                Drop photo or click to browse
-                              </p>
-                              <p className="text-xs text-white/40">
-                                Supports JPG, PNG, WEBP
-                              </p>
-                            </label>
-                          </div>
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-white/40">
+                              <FileVideo className="w-8 h-8" />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-white/80 mb-2">
+                          Your Photo (Optional)
+                          <span className="block text-xs text-white/60 mt-1">
+                            If you want to be in the thumbnail
+                          </span>
+                        </label>
+                        <div className="border-2 border-dashed border-white/10 rounded-lg p-4 text-center hover:border-[#3749be] transition-colors">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            className="hidden"
+                            id="photo-upload"
+                          />
+                          <label htmlFor="photo-upload" className="cursor-pointer">
+                            <Upload className="w-8 h-8 mx-auto mb-3 text-white/70" />
+                            <p className="text-sm text-white/70 mb-1">
+                              Drop photo or click to browse
+                            </p>
+                            <p className="text-xs text-white/40">
+                              Supports JPG, PNG, WEBP
+                            </p>
+                          </label>
                         </div>
                       </div>
                     </div>
-                    {/* YouTube Generation Options */}
-                    <div className="space-y-4">
-                      <label className="block text-sm font-medium text-white/80">Choose Generation Option</label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <button
-                          type="button"
-                          onClick={() => setGenerationOption('style')}
-                          className={`flex items-center justify-center px-4 py-3 rounded-lg border transition-colors ${
-                            generationOption === 'style'
-                              ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                              : 'border-white/10 bg-white/5 text-white/80 hover:border-blue-500/50'
-                          }`}
-                        >
-                          Use this youtube style and theme
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setGenerationOption('recreate')}
-                          className={`flex items-center justify-center px-4 py-3 rounded-lg border transition-colors ${
-                            generationOption === 'recreate'
-                              ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                              : 'border-white/10 bg-white/5 text-white/80 hover:border-blue-500/50'
-                          }`}
-                        >
-                          Recreate this youtube thumbnail
-                        </button>
-                      </div>
+                  </div>
+                  {/* YouTube Generation Options */}
+                  <div className="space-y-4">
+                    <label className="block text-sm font-medium text-white/80">Choose Generation Option</label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setGenerationOption('style')}
+                        className={`flex items-center justify-center px-4 py-3 rounded-lg border transition-colors ${
+                          generationOption === 'style'
+                            ? 'border-blue-500 bg-blue-500/10 text-blue-400'
+                            : 'border-white/10 bg-white/5 text-white/80 hover:border-blue-500/50'
+                        }`}
+                      >
+                        Use this youtube style and theme
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setGenerationOption('recreate')}
+                        className={`flex items-center justify-center px-4 py-3 rounded-lg border transition-colors ${
+                          generationOption === 'recreate'
+                            ? 'border-blue-500 bg-blue-500/10 text-blue-400'
+                            : 'border-white/10 bg-white/5 text-white/80 hover:border-blue-500/50'
+                        }`}
+                      >
+                        Recreate this youtube thumbnail
+                      </button>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
                 
+              {/* Aspect Ratio Selection */}
+              <div className="mb-6">
+                <label className="flex items-center gap-2 text-sm font-medium text-white/80 mb-3">
+                  Select Ratio
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setSelectedRatio('16:9')}
+                    className={`flex items-center gap-3 p-4 rounded-xl transition-all duration-300 ${
+                      getSelectionClasses(selectedRatio === '16:9')
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      >
+                        <rect x="2" y="6" width="20" height="11.25" rx="2" />
+                      </svg>
+                      <span className="text-sm">16:9</span>
+                    </div>
+                  </button>
+                  
+                  <button
+                    onClick={() => setSelectedRatio('9:16')}
+                    className={`flex items-center gap-3 p-4 rounded-xl transition-all duration-300 ${
+                      getSelectionClasses(selectedRatio === '9:16')
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      >
+                        <rect x="6" y="2" width="11.25" height="20" rx="2" />
+                      </svg>
+                      <span className="text-sm">9:16</span>
+                    </div>
+                  </button>
+                </div>
               </div>
-            </div>
-            
-            {/* Aspect Ratio Selection */}
-            <div className="mb-6">
-              <label className="flex items-center gap-2 text-sm font-medium text-white/80 mb-3">
-                Select Ratio
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setSelectedRatio('16:9')}
-                  className={`flex items-center gap-3 p-4 rounded-xl transition-all duration-300 ${
-                    getSelectionClasses(selectedRatio === '16:9')
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    >
-                      <rect x="2" y="6" width="20" height="11.25" rx="2" />
-                    </svg>
-                    <span className="text-sm">16:9</span>
-                  </div>
-                </button>
-                
-                <button
-                  onClick={() => setSelectedRatio('9:16')}
-                  className={`flex items-center gap-3 p-4 rounded-xl transition-all duration-300 ${
-                    getSelectionClasses(selectedRatio === '9:16')
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    >
-                      <rect x="6" y="2" width="11.25" height="20" rx="2" />
-                    </svg>
-                    <span className="text-sm">9:16</span>
-                  </div>
-                </button>
-              </div>
-            </div>
 
-             {/* Generate Button */}
-             <button className="relative w-full inline-flex h-12 overflow-hidden rounded-full p-[2px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-50 mb-8">
-              <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#a2aeff_0%,#3749be_50%,#a2aeff_100%)] dark:bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
-              <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full dark:bg-[#070e41] bg-[#ffffff] px-8 py-1 text-sm font-medium dark:text-gray-50 text-black backdrop-blur-3xl">
-                <Zap className="w-5 h-5 mr-2" />
-                Generate Thumbnails
-              </span>
-            </button>
+               {/* Generate Button */}
+               <button 
+                onClick={handleGenerateThumbnail}
+                disabled={isGenerating || !user}
+                className="relative w-full inline-flex h-12 overflow-hidden rounded-full p-[2px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-50 mb-8 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#a2aeff_0%,#3749be_50%,#a2aeff_100%)] dark:bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
+                <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full dark:bg-[#070e41] bg-[#ffffff] px-8 py-1 text-sm font-medium dark:text-gray-50 text-black backdrop-blur-3xl">
+                  <Zap className="w-5 h-5 mr-2" />
+                  {isGenerating ? 'Generating...' : 'Generate Thumbnails'}
+                </span>
+              </button>
+              {error && (
+                <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+                  {error}
+                </div>
+              )}
+            </div>
 
             {/* Recent Creations */}
-            <div className="space-y-6">
+            <div className="mt-12 space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold">Recent Creations</h2>
                 <button 
@@ -389,207 +491,147 @@ export function Dashboard() {
                 </button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  {
-                    id: 101,
-                    url: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97',
-                    title: 'React Development',
-                    aspectRatio: '16:9',
-                    gridSpan: 'sm:col-span-2 md:col-span-1'
-                  },
-                  {
-                    id: 102,
-                    url: 'https://images.unsplash.com/photo-1551650975-87deedd944c3',
-                    title: 'Mobile Development',
-                    aspectRatio: '16:9',
-                    gridSpan: 'md:col-span-1'
-                  },
-                  {
-                    id: 103,
-                    url: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085',
-                    title: 'Web Design',
-                    aspectRatio: '16:9',
-                    gridSpan: 'sm:col-span-2 md:col-span-1'
-                  },
-                  {
-                    id: 104,
-                    url: 'https://images.unsplash.com/photo-1551650975-87deedd944c3',
-                    title: 'UI/UX Design',
-                    aspectRatio: '16:9',
-                    gridSpan: 'md:col-span-1'
-                  }
-                ].map((item) => (
+                {userGenerations.slice(0, 4).map((generation) => (
                   <motion.div
-                    key={item.id}
+                    key={generation.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    onClick={() => setZoomedImage({ url: item.url, title: item.title })}
+                    onClick={() => setZoomedImage({ 
+                      url: generation.output_image_url, 
+                      title: new Date(generation.created_at).toLocaleDateString() 
+                    })}
                     className={cn(
                       "group relative rounded-xl overflow-hidden cursor-zoom-in h-full",
                       "bg-white/5 backdrop-blur-sm border border-white/10",
                       "hover:border-[#3749be] hover:shadow-lg hover:shadow-[#3749be]/20",
                       "transition-all duration-300",
-                      item.aspectRatio === "16:9" ? "aspect-video" : "aspect-[9/16]",
-                      item.gridSpan
+                      "aspect-video"
                     )}
                   >
                     <motion.img
-                      src={item.url}
-                      alt={item.title}
+                      src={generation.output_image_url}
+                      alt={`Generated on ${new Date(generation.created_at).toLocaleDateString()}`}
                       className="w-full h-full object-cover"
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.3 }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
                       <div className="absolute inset-0 flex flex-col justify-end p-4">
-                        <p className="text-white text-sm font-medium">{item.title}</p>
+                        <p className="text-white text-sm font-medium">
+                          {new Date(generation.created_at).toLocaleDateString()}
+                        </p>
+                        <p className="text-white/60 text-xs">
+                          {generation.generation_type.replace(/_/g, ' ')}
+                        </p>
                       </div>
                     </div>
                   </motion.div>
                 ))}
               </div>
+            </div>
 
-              {/* Image Zoom Modal */}
-              {zoomedImage && (
+            {/* Image Zoom Modal */}
+            {zoomedImage && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 md:p-8"
+                onClick={() => setZoomedImage(null)}
+              >
                 <div 
-                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
-                  onClick={() => setZoomedImage(null)}
+                  className="relative w-full h-full flex items-center justify-center"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="relative max-w-[90vw] max-h-[90vh]">
-                    <motion.img
+                  <motion.div
+                    className="relative max-w-full max-h-full flex items-center justify-center"
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <img
                       src={zoomedImage.url}
                       alt={zoomedImage.title}
-                      className="w-full h-full object-contain rounded-lg"
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.9, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
+                      className="max-h-[85vh] max-w-[85vw] w-auto h-auto object-contain rounded-lg shadow-2xl"
+                      style={{ 
+                        minHeight: '200px',
+                        backgroundColor: 'rgba(0, 0, 0, 0.2)'
+                      }}
                     />
-                    <button
-                      className="absolute top-4 right-4 text-white/80 hover:text-white"
-                      onClick={() => setZoomedImage(null)}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
+                    <div className="absolute top-4 right-4 flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownload(
+                            zoomedImage.url,
+                            `thumbnail-${zoomedImage.title}.png`
+                          );
+                        }}
+                        className="p-2 rounded-full bg-black/80 text-white/80 hover:text-white hover:bg-black shadow-lg hover:shadow-xl transition-all duration-200 border border-white/10 flex items-center gap-2"
+                        title="Download Image"
+                      >
+                        <svg 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          className="h-6 w-6" 
+                          fill="none" 
+                          viewBox="0 0 24 24" 
+                          stroke="currentColor"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setZoomedImage(null);
+                        }}
+                        className="p-2 rounded-full bg-black/80 text-white/80 hover:text-white hover:bg-black shadow-lg hover:shadow-xl transition-all duration-200 border border-white/10"
+                        title="Close"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-center whitespace-nowrap">
+                      <p className="text-white/90 text-sm bg-black/50 backdrop-blur-sm rounded-full py-2 px-6 shadow-lg border border-white/10">
+                        Generated on {zoomedImage.title}
+                      </p>
+                    </div>
+                  </motion.div>
                 </div>
-              )}
-            </div>
+              </motion.div>
+            )}
           </>
         );
       case 'creations':
         return (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">My Creations</h2>
-              <div className="flex items-center gap-3">
-                <button className="px-4 py-2 rounded-lg border border-white/10 hover:border-[#3749be] transition-colors text-sm">
-                  Filter
-                </button>
-                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
-                  New Thumbnail
-                </button>
-              </div>
-            </div>
-            <AnimatedGallery 
-              items={[
-                {
-                  id: 201,
-                  url: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97',
-                  title: 'React Development Tips',
-                  description: 'Advanced React patterns and best practices',
-                  aspectRatio: '16:9'
-                },
-                {
-                  id: 202,
-                  url: 'https://images.unsplash.com/photo-1551650975-87deedd944c3',
-                  title: 'Mobile App Development',
-                  description: 'Building cross-platform mobile applications',
-                  aspectRatio: '16:9'
-                },
-                {
-                  id: 203,
-                  url: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085',
-                  title: 'Web Design Trends 2024',
-                  description: 'Latest trends in modern web design',
-                  aspectRatio: '16:9'
-                },
-                {
-                  id: 204,
-                  url: 'https://images.unsplash.com/photo-1551650975-87deedd944c3',
-                  title: 'UI/UX Design Process',
-                  description: 'Complete guide to design workflow',
-                  aspectRatio: '16:9'
-                },
-                {
-                  id: 205,
-                  url: 'https://images.unsplash.com/photo-1542831371-29b0f74f9713',
-                  title: 'Code Review Best Practices',
-                  description: 'How to conduct effective code reviews',
-                  aspectRatio: '16:9'
-                },
-                {
-                  id: 206,
-                  url: 'https://images.unsplash.com/photo-1627398242454-45a1465c2479',
-                  title: 'DevOps Pipeline Setup',
-                  description: 'Building a modern CI/CD pipeline',
-                  aspectRatio: '16:9'
-                },
-                {
-                  id: 207,
-                  url: 'https://images.unsplash.com/photo-1555099962-4199c345e5dd',
-                  title: 'Database Design',
-                  description: 'Optimizing database architecture',
-                  aspectRatio: '16:9'
-                }
-              ]}
-              onDownload={(item) => {
-                console.log('Downloading:', item);
-                // Handle download logic
-              }}
-            />
-          </div>
+          <MyCreations 
+            isLoading={isLoadingGenerations}
+            generations={userGenerations}
+            onNewThumbnail={() => setActiveSection('create')}
+            onZoomImage={setZoomedImage}
+            onDownload={handleDownload}
+            zoomedImage={zoomedImage}
+            onCloseZoom={() => setZoomedImage(null)}
+          />
         );
       case 'subscription':
         return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold">My Subscription</h2>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Current Plan</h3>
-                  <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm">Active</span>
-                </div>
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-3xl font-bold">$24.99</span>
-                  <span className="text-white/60">/month</span>
-                </div>
-                <p className="text-white/60 mb-4">Creator Plan</p>
-                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
-                  Upgrade Plan
-                </button>
-              </div>
-              <div className="border-t border-white/10 pt-6">
-                <h3 className="text-lg font-semibold mb-4">Billing History</h3>
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center justify-between py-2">
-                      <div>
-                        <p className="font-medium">Creator Plan</p>
-                        <p className="text-sm text-white/60">{new Date().toLocaleDateString()}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">$24.99</p>
-                        <p className="text-sm text-green-400">Paid</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+          <Subscription 
+            credits={credits}
+            isLoadingCredits={isLoadingGenerations}
+            onUpgrade={() => {
+              // TODO: Implement upgrade flow
+              console.log('Upgrade to pro clicked');
+            }}
+          />
         );
       case 'logout':
         return (
@@ -603,11 +645,177 @@ export function Dashboard() {
             </button>
           </div>
         );
-      case 'referrals':
-        return null;
       default:
         return null;
     }
+  };
+
+  const handleGenerateThumbnail = async () => {
+    if (!user) {
+      setError('Please log in to generate thumbnails');
+      return;
+    }
+
+    setIsGenerating(true);
+    setError(null);
+
+    try {
+      let payload = {};
+
+      switch (generationType) {
+        case 'title':
+          payload = { 
+            title, 
+            userId: user.id,
+            generationType: 'text_to_thumbnail',
+            aspectRatio: selectedRatio
+          };
+          break;
+        case 'image':
+          payload = { 
+            imageText, 
+            imageUrl: selectedFile, 
+            userId: user.id,
+            generationType: 'image_to_thumbnail',
+            aspectRatio: selectedRatio
+          };
+          break;
+        case 'youtube':
+          payload = { 
+            youtubeUrl, 
+            userId: user.id,
+            generationType: 'youtube_to_thumbnail',
+            generationOption,
+            aspectRatio: selectedRatio
+          };
+          break;
+        default:
+          throw new Error('Invalid generation type');
+      }
+
+      const response = await fetch('http://localhost:3001/api/generate-thumbnail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const contentType = response.headers.get('content-type');
+      let data;
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(`Unexpected response: ${text}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate thumbnail');
+      }
+
+      // Set the generated images and show popup
+      setGeneratedImages(data.images);
+      setShowGeneratedPopup(true);
+      
+      // Refresh credits and generations after successful generation
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('credits')
+        .eq('id', user.id)
+        .single();
+      
+      if (profile) {
+        setCredits(profile.credits);
+      }
+
+      // Fetch updated generations
+      const { data: generations } = await supabase
+        .from('generations')
+        .select('*')
+        .eq('profile_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (generations) {
+        setUserGenerations(generations);
+      }
+    } catch (err) {
+      console.error('Error generating thumbnail:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate thumbnail');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDownload = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
+  };
+
+  // Generated Images Popup Component
+  const GeneratedImagesPopup = () => {
+    if (!showGeneratedPopup || generatedImages.length === 0) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div className="relative max-w-4xl w-full mx-4 bg-[#070e41] rounded-xl overflow-hidden border border-white/10">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white">Generated Thumbnails</h3>
+              <button
+                onClick={() => setShowGeneratedPopup(false)}
+                className="text-white/60 hover:text-white transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-4">
+              {generatedImages.map((imageUrl, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={imageUrl}
+                    alt={`Generated thumbnail ${index + 1}`}
+                    className="w-full h-auto rounded-lg border border-white/10"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 rounded-lg">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownload(
+                          imageUrl,
+                          `thumbnail-${index + 1}.png`
+                        );
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Download
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -641,7 +849,7 @@ export function Dashboard() {
           <div className="mb-8 px-4 py-3 bg-[#070e41]/30 rounded-xl border border-white/5">
             <div className="flex items-center gap-2 mb-1">
               <Gem className="w-5 h-5 text-blue-400" />
-              <span className="font-semibold text-lg">{credits}</span>
+              <span className="font-semibold text-lg">{credits ?? '...'}</span>
             </div>
             <span className="text-sm text-white/60">Available Credits</span>
           </div>
@@ -665,10 +873,10 @@ export function Dashboard() {
                     w-full flex items-center gap-3 px-4 py-3 rounded-lg
                     text-sm font-medium transition-all duration-200
                     ${isActive 
-                      ? 'relative before:absolute before:inset-0 before:rounded-lg before:border-2 before:border-[#3749be] before:animate-[border-pulse_2s_linear_infinite] text-white bg-transparent' 
-                      : 'text-white/60 hover:text-white hover:bg-white/5 bg-transparent'
-                    } hover:scale-[1.02]
-                    ${item.id === 'logout' ? 'mt-auto text-red-400 hover:text-red-300' : ''}
+                      ? 'text-white after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:rounded-full after:bg-blue-400 after:shadow-[0_0_8px_rgba(96,165,250,0.6)]' 
+                      : 'text-white/60 hover:text-white/80'
+                    }
+                    transition-all duration-300 hover:scale-105
                   `}
                 >
                   <Icon className="w-6 h-6" />
@@ -690,7 +898,7 @@ export function Dashboard() {
         {/* Credits Display for Mobile */}
         <div className="absolute -top-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl bg-[#070e41]/80 backdrop-blur-sm border border-white/10 flex items-center gap-2">
           <Gem className="w-4 h-4 text-blue-400" />
-          <span className="font-medium text-white">{credits}</span>
+          <span className="font-medium text-white">{credits ?? '...'}</span>
           <span className="text-sm text-white/60">credits</span>
         </div>
 
@@ -743,12 +951,10 @@ export function Dashboard() {
       <div className="lg:pl-64 pt-8">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <UserProfile />
-          <div className="mt-8">
-            <GenerationHistory />
-          </div>
           {renderContent()}
         </div>
       </div>
+      <GeneratedImagesPopup />
     </div>
   );
 }
