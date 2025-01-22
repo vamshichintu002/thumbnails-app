@@ -256,147 +256,28 @@ app.post('/api/generate-from-youtube', async (req, res) => {
   }
 });
 
-// Add new endpoints for user management
-app.post('/api/profile', async (req, res) => {
-  try {
-    const { userId, referralCode } = req.body;
-    const profile = await DatabaseService.createProfile(userId, referralCode);
-    res.json({ success: true, profile });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
 app.get('/api/profile/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     if (!userId) {
       return res.status(400).json({ 
-        success: false, 
-        error: 'User ID is required' 
+        success: false,
+        message: 'User ID is required'
       });
     }
 
+    console.log('Fetching profile for user:', userId);
     const profile = await DatabaseService.getProfile(userId);
-    if (!profile) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Profile not found' 
-      });
-    }
-
-    res.json({ success: true, profile });
+    
+    res.json({
+      success: true,
+      data: profile
+    });
   } catch (error) {
     console.error('Error fetching profile:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message || 'Internal server error' 
-    });
-  }
-});
-
-app.post('/api/referral', async (req, res) => {
-  try {
-    const { referralCode, userId } = req.body;
-    await DatabaseService.processReferral(referralCode, userId);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Get user's referral stats
-app.get('/api/referral-stats/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    console.log('Fetching referral stats for userId:', userId);
-
-    // Get user's profile
-    const profile = await DatabaseService.getProfile(userId);
-    if (!profile) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Profile not found' 
-      });
-    }
-
-    // Get referrals count
-    const { data: referrals, error: referralsError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('referred_by', profile.referral_code);
-
-    if (referralsError) {
-      console.error('Error fetching referrals:', referralsError);
-      throw referralsError;
-    }
-
-    // Get active users (users who have generated at least one thumbnail)
-    let activeUsersCount = 0;
-    if (referrals && referrals.length > 0) {
-      const referralIds = referrals.map(r => r.id);
-      const { data: generations, error: generationsError } = await supabase
-        .from('generations')
-        .select('profile_id')
-        .filter('profile_id', 'in', `(${referralIds.join(',')})`)
-        .limit(1);
-
-      if (generationsError) {
-        console.error('Error fetching generations:', generationsError);
-        throw generationsError;
-      }
-
-      activeUsersCount = generations ? generations.length : 0;
-    }
-
-    const totalReferrals = referrals ? referrals.length : 0;
-    const creditsEarned = totalReferrals * 30;
-
-    res.json({
-      success: true,
-      data: {
-        referralCode: profile.referral_code,
-        totalReferrals,
-        activeUsers: activeUsersCount,
-        creditsEarned
-      }
-    });
-  } catch (error) {
-    console.error('Error in referral stats:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message || 'Internal server error' 
-    });
-  }
-});
-
-// Get user's referral link
-app.get('/api/referral-link/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    console.log('Fetching referral link for userId:', userId);
-
-    const profile = await DatabaseService.getProfile(userId);
-    if (!profile) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Profile not found' 
-      });
-    }
-
-    const referralLink = `${process.env.VITE_APP_URL || 'http://localhost:5173'}/ref/${profile.referral_code}`;
-    res.json({
-      success: true,
-      data: {
-        referralLink,
-        referralCode: profile.referral_code
-      }
-    });
-  } catch (error) {
-    console.error('Error getting referral link:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message || 'Internal server error' 
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch profile'
     });
   }
 });

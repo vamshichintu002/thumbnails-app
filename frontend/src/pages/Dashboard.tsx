@@ -8,26 +8,24 @@ import {
   Plus,
   ArrowRight,
   LayoutGrid,
-  Users as UsersIcon,
   CreditCard,
   Image as ImageIcon, 
-  Coins, 
   Youtube, 
   Type, 
   FileVideo, 
   AlertCircle,
   LogOut,
   User,
+  Gem,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { UserProfile } from '../components/UserProfile';
 import { GenerationHistory } from '../components/GenerationHistory';
-import { ReferralSection } from '../components/ReferralSection';
 
 type GenerationType = 'title' | 'image' | 'youtube' | 'custom';
 type AspectRatio = '16:9' | '9:16';
-type MenuSection = 'create' | 'creations' | 'referrals' | 'subscription' | 'logout';
+type MenuSection = 'create' | 'creations' | 'subscription' | 'logout';
 
 // YouTube URL regex pattern
 const YOUTUBE_URL_PATTERN = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
@@ -129,7 +127,6 @@ export function Dashboard() {
   const menuItems = [
     { id: 'create', label: 'Create', icon: Plus },
     { id: 'creations', label: 'My Creations', icon: LayoutGrid },
-    { id: 'referrals', label: 'Referrals', icon: UsersIcon },
     { id: 'subscription', label: 'My Subscription', icon: CreditCard },
     { id: 'logout', label: 'Logout', icon: LogOut, onClick: handleLogout },
   ];
@@ -555,15 +552,6 @@ export function Dashboard() {
             />
           </div>
         );
-      case 'referrals':
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold">Referrals</h2>
-            <div className="p-4 md:p-6 w-full">
-              <ReferralSection userId={user?.id} />
-            </div>
-          </div>
-        );
       case 'subscription':
         return (
           <div className="space-y-6">
@@ -615,6 +603,8 @@ export function Dashboard() {
             </button>
           </div>
         );
+      case 'referrals':
+        return null;
       default:
         return null;
     }
@@ -650,7 +640,7 @@ export function Dashboard() {
           {/* Credits Display */}
           <div className="mb-8 px-4 py-3 bg-[#070e41]/30 rounded-xl border border-white/5">
             <div className="flex items-center gap-2 mb-1">
-              <Coins className="w-5 h-5 text-blue-400" />
+              <Gem className="w-5 h-5 text-blue-400" />
               <span className="font-semibold text-lg">{credits}</span>
             </div>
             <span className="text-sm text-white/60">Available Credits</span>
@@ -699,7 +689,7 @@ export function Dashboard() {
 
         {/* Credits Display for Mobile */}
         <div className="absolute -top-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl bg-[#070e41]/80 backdrop-blur-sm border border-white/10 flex items-center gap-2">
-          <Coins className="w-4 h-4 text-blue-400" />
+          <Gem className="w-4 h-4 text-blue-400" />
           <span className="font-medium text-white">{credits}</span>
           <span className="text-sm text-white/60">credits</span>
         </div>

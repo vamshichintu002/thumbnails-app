@@ -15,6 +15,7 @@ export default function Signup() {
       setError(null)
       await signInWithGoogle()
     } catch (err) {
+      console.error('Signup error:', err)
       setError(err instanceof Error ? err.message : 'An error occurred during sign up')
     } finally {
       setLoading(false)
