@@ -16,18 +16,29 @@ const supabase = createClient(
 
 export const DatabaseService = {
   // Profile Management
-  async createProfile(userId, referralCode = null) {
-    console.log('Creating new profile for user:', userId);
+  async createProfile(user, referralCode = null) {
+    if (!user || !user.id) {
+      throw new Error('Invalid user data provided to createProfile');
+    }
+    
+    console.log('Creating new profile for user:', user.id);
     try {
+      const profileData = {
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || user.user_metadata?.name,
+        avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
+        credits: 50,
+        referral_code: referralCode || this.generateReferralCode(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('Profile data to insert:', profileData);
+
       const { data, error } = await supabase
         .from('profiles')
-        .insert({
-          id: userId,
-          credits: 50,
-          referral_code: referralCode || this.generateReferralCode(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .insert(profileData)
         .select()
         .single();
 
@@ -78,9 +89,13 @@ export const DatabaseService = {
   },
 
   async syncUserProfile(user) {
+    if (!user || !user.id) {
+      throw new Error('Invalid user data provided to syncUserProfile');
+    }
+
     console.log('Syncing profile for user:', user.id);
     try {
-      // First, try to get existing profile
+      // Check if profile exists
       const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
@@ -90,18 +105,21 @@ export const DatabaseService = {
       if (fetchError && fetchError.code === 'PGRST116') {
         // Profile doesn't exist, create it
         console.log('No profile found, creating new profile');
-        return await this.createProfile(user.id);
+        return await this.createProfile(user);
       } else if (fetchError) {
         // Other error occurred
         console.error('Error checking profile:', fetchError);
         throw fetchError;
       }
 
-      // Profile exists, update timestamp
+      // Profile exists, update it
       console.log('Updating existing profile');
       const { data, error: updateError } = await supabase
         .from('profiles')
         .update({
+          email: user.email,
+          full_name: user.user_metadata?.full_name || user.user_metadata?.name,
+          avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id)
@@ -121,7 +139,82 @@ export const DatabaseService = {
     }
   },
 
-  // Generation Management
+  async syncAllAuthUsers() {
+    console.log('Starting sync of all auth users to profiles');
+    try {
+      // Get all existing profiles
+      const { data: existingProfiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('id');
+
+      if (profileError) {
+        console.error('Error fetching existing profiles:', profileError);
+        throw profileError;
+      }
+
+      const existingProfileIds = new Set(existingProfiles.map(p => p.id));
+
+      // Define known users
+      const knownUsers = [
+        {
+          id: 'c6ff9ffe-1fc9-4ae1-8c5a-09d93c767f82',
+          email: 'devtern.tech@gmail.com',
+          user_metadata: {
+            full_name: 'Devtern',
+            name: 'Devtern'
+          }
+        },
+        {
+          id: '7d618497-d441-4ec7-b031-69683b952821',
+          email: 'thumbnailslabs@gmail.com',
+          user_metadata: {
+            full_name: 'Thumbnails Labs',
+            name: 'Thumbnails Labs'
+          }
+        }
+      ];
+
+      // Sync each known user
+      for (const user of knownUsers) {
+        if (!existingProfileIds.has(user.id)) {
+          console.log(`Creating missing profile for user: ${user.id}`);
+          await this.syncUserProfile(user);
+        }
+      }
+
+      console.log('Completed syncing all auth users to profiles');
+      return { success: true };
+    } catch (error) {
+      console.error('Error in syncAllAuthUsers:', error);
+      throw error;
+    }
+  },
+
+  async ensureUserProfile(userId) {
+    try {
+      // Check if profile exists
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+
+      if (profileError && profileError.code === 'PGRST116') {
+        // Profile doesn't exist, create it
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) throw error;
+        return await this.syncUserProfile(user);
+      } else if (profileError) {
+        throw profileError;
+      }
+
+      return profile;
+    } catch (error) {
+      console.error('Error in ensureUserProfile:', error);
+      throw error;
+    }
+  },
+
   async logGeneration(profileId, type, outputUrl, creditCost) {
     const { data: profile } = await supabase
       .from('profiles')
@@ -145,7 +238,6 @@ export const DatabaseService = {
     return data
   },
 
-  // User Images Management
   async saveUserImage(profileId, imageUrl) {
     const { data, error } = await supabase
       .from('user_images')
@@ -159,7 +251,6 @@ export const DatabaseService = {
     return data
   },
 
-  // Credits Management
   async addCredits(profileId, amount) {
     const { data, error } = await supabase
       .from('profiles')
@@ -172,7 +263,6 @@ export const DatabaseService = {
     return data
   },
 
-  // Referral Management
   async processReferral(referralCode, newUserId) {
     const { data: referrer } = await supabase
       .from('profiles')
@@ -191,6 +281,25 @@ export const DatabaseService = {
         .update({ referred_by: referralCode })
         .eq('id', newUserId)
     ])
+  },
+
+  async syncMissingProfiles() {
+    console.log('Syncing missing profiles for existing users');
+    try {
+      // Get all users that don't have profiles
+      const { data, error } = await supabase.rpc('sync_missing_profiles');
+      
+      if (error) {
+        console.error('Error syncing missing profiles:', error);
+        throw error;
+      }
+
+      console.log('Successfully synced missing profiles:', data);
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error in syncMissingProfiles:', error);
+      throw error;
+    }
   },
 
   generateReferralCode() {

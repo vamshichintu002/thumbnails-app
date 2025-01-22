@@ -30,8 +30,14 @@ export const AuthService = {
         throw new Error('No user found after authentication')
       }
 
-      // Sync user data to profiles table
-      await DatabaseService.syncUserProfile(user)
+      try {
+        // Always sync user profile on sign in/sign up
+        console.log('Syncing user profile after authentication');
+        await DatabaseService.syncUserProfile(user);
+      } catch (profileError) {
+        console.error('Error syncing user profile:', profileError);
+        // Continue with authentication even if profile sync fails
+      }
 
       return { success: true, user }
     } catch (error) {
@@ -80,8 +86,14 @@ export const AuthService = {
         throw new Error('Invalid session')
       }
 
-      // Update profile timestamp
-      await DatabaseService.syncUserProfile(user)
+      try {
+        // Always sync user profile on session verification
+        console.log('Syncing user profile on session verification');
+        await DatabaseService.syncUserProfile(user);
+      } catch (profileError) {
+        console.error('Error syncing user profile:', profileError);
+        // Continue with session verification even if profile sync fails
+      }
 
       return { success: true, user }
     } catch (error) {

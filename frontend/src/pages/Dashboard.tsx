@@ -23,6 +23,7 @@ import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { UserProfile } from '../components/UserProfile';
 import { GenerationHistory } from '../components/GenerationHistory';
+import { ReferralSection } from '../components/ReferralSection';
 
 type GenerationType = 'title' | 'image' | 'youtube' | 'custom';
 type AspectRatio = '16:9' | '9:16';
@@ -558,35 +559,8 @@ export function Dashboard() {
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold">Referrals</h2>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">Your Referral Link</h3>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value="https://thumbai.app/ref/user123"
-                    readOnly
-                    className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10"
-                  />
-                  <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
-                    Copy
-                  </button>
-                </div>
-              </div>
-              <div className="grid md:grid-cols-3 gap-4 mb-8">
-                <div className="bg-white/5 rounded-lg p-4">
-                  <h4 className="text-sm text-white/60 mb-1">Total Referrals</h4>
-                  <p className="text-2xl font-bold">24</p>
-                </div>
-                <div className="bg-white/5 rounded-lg p-4">
-                  <h4 className="text-sm text-white/60 mb-1">Active Users</h4>
-                  <p className="text-2xl font-bold">18</p>
-                </div>
-                <div className="bg-white/5 rounded-lg p-4">
-                  <h4 className="text-sm text-white/60 mb-1">Credits Earned</h4>
-                  <p className="text-2xl font-bold">240</p>
-                </div>
-              </div>
+            <div className="p-4 md:p-6 w-full">
+              <ReferralSection userId={user?.id} />
             </div>
           </div>
         );

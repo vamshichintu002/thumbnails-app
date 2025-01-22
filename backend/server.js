@@ -9,11 +9,18 @@ import fs from 'fs-extra';
 import path from 'path';
 import { DatabaseService } from './services/database.js';
 import { AuthService } from './services/auth.js';
+import { createClient } from '@supabase/supabase-js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 dotenv.config();
+
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
 
 const app = express();
 const port = 3001;
@@ -25,9 +32,10 @@ fs.ensureDirSync(publicDir);
 fs.ensureDirSync(generatedImagesDir);
 
 app.use(cors({
-  origin: 'http://localhost:5173', // Vite's default development port
-  methods: ['GET', 'POST'],
-  credentials: true
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use('/public', express.static('public'));
@@ -261,14 +269,15 @@ app.post('/api/profile', async (req, res) => {
 
 app.get('/api/profile/:userId', async (req, res) => {
   try {
-    if (!req.params.userId) {
+    const { userId } = req.params;
+    if (!userId) {
       return res.status(400).json({ 
         success: false, 
         error: 'User ID is required' 
       });
     }
 
-    const profile = await DatabaseService.getProfile(req.params.userId);
+    const profile = await DatabaseService.getProfile(userId);
     if (!profile) {
       return res.status(404).json({ 
         success: false, 
@@ -293,6 +302,102 @@ app.post('/api/referral', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get user's referral stats
+app.get('/api/referral-stats/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log('Fetching referral stats for userId:', userId);
+
+    // Get user's profile
+    const profile = await DatabaseService.getProfile(userId);
+    if (!profile) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Profile not found' 
+      });
+    }
+
+    // Get referrals count
+    const { data: referrals, error: referralsError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('referred_by', profile.referral_code);
+
+    if (referralsError) {
+      console.error('Error fetching referrals:', referralsError);
+      throw referralsError;
+    }
+
+    // Get active users (users who have generated at least one thumbnail)
+    let activeUsersCount = 0;
+    if (referrals && referrals.length > 0) {
+      const referralIds = referrals.map(r => r.id);
+      const { data: generations, error: generationsError } = await supabase
+        .from('generations')
+        .select('profile_id')
+        .filter('profile_id', 'in', `(${referralIds.join(',')})`)
+        .limit(1);
+
+      if (generationsError) {
+        console.error('Error fetching generations:', generationsError);
+        throw generationsError;
+      }
+
+      activeUsersCount = generations ? generations.length : 0;
+    }
+
+    const totalReferrals = referrals ? referrals.length : 0;
+    const creditsEarned = totalReferrals * 30;
+
+    res.json({
+      success: true,
+      data: {
+        referralCode: profile.referral_code,
+        totalReferrals,
+        activeUsers: activeUsersCount,
+        creditsEarned
+      }
+    });
+  } catch (error) {
+    console.error('Error in referral stats:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Internal server error' 
+    });
+  }
+});
+
+// Get user's referral link
+app.get('/api/referral-link/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log('Fetching referral link for userId:', userId);
+
+    const profile = await DatabaseService.getProfile(userId);
+    if (!profile) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Profile not found' 
+      });
+    }
+
+    const referralLink = `${process.env.VITE_APP_URL || 'http://localhost:5173'}/ref/${profile.referral_code}`;
+    res.json({
+      success: true,
+      data: {
+        referralLink,
+        referralCode: profile.referral_code
+      }
+    });
+  } catch (error) {
+    console.error('Error getting referral link:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Internal server error' 
+    });
   }
 });
 
