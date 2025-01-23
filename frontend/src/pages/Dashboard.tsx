@@ -87,31 +87,67 @@ export function Dashboard() {
   }, []);
 
   useEffect(() => {
+    if (!user?.id) return;
+
+    // Initial fetch of credits
     const fetchCredits = async () => {
-      if (!user) return;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('credits')
+        .eq('id', user.id)
+        .single();
       
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('credits')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching credits:', error);
-          return;
-        }
-
-        if (data) {
-          setCredits(data.credits);
-        }
-      } catch (error) {
-        console.error('Error:', error);
-      }
+      if (data) setCredits(data.credits);
     };
 
     fetchCredits();
-  }, [user]);
+
+    // Subscribe to credits changes
+    const creditsChannel = supabase.channel(`profile-${user.id}`);
+    
+    creditsChannel
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          console.log('Credits updated:', payload);
+          if (payload.new && typeof payload.new.credits === 'number') {
+            setCredits(payload.new.credits);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Credits subscription status:', status);
+      });
+
+    // Subscribe to new image generations
+    const thumbnailsChannel = supabase.channel(`thumbnails-${user.id}`);
+    
+    thumbnailsChannel
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'thumbnails',
+          filter: `profile_id=eq.${user.id}`,
+        },
+        () => {
+          fetchGeneratedImages();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      creditsChannel.unsubscribe();
+      thumbnailsChannel.unsubscribe();
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     const fetchUserGenerations = async () => {
@@ -803,7 +839,7 @@ export function Dashboard() {
                             `thumbnail-${zoomedImage.title}.png`
                           );
                         }}
-                        className="p-2 rounded-full bg-black/80 text-white/80 hover:text-white hover:bg-black shadow-lg hover:shadow-xl transition-all duration-200 border border-white/10 flex items-center gap-2"
+                        className="p-2 rounded-full bg-black/80 text-white/80 hover:text-white border border-white/10 flex items-center gap-2"
                         title="Download Image"
                       >
                         <svg 
@@ -826,7 +862,7 @@ export function Dashboard() {
                           e.stopPropagation();
                           setZoomedImage(null);
                         }}
-                        className="p-2 rounded-full bg-black/80 text-white/80 hover:text-white hover:bg-black shadow-lg hover:shadow-xl transition-all duration-200 border border-white/10"
+                        className="p-2 rounded-full bg-black/80 text-white/80 hover:text-white border border-white/10"
                         title="Close"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -976,6 +1012,17 @@ export function Dashboard() {
       // Set the generated image and show popup
       setGeneratedImages([data.output_image_url]);
       setShowGeneratedPopup(true);
+
+      // Update credits after successful generation
+      const { data: updatedProfile } = await supabase
+        .from('profiles')
+        .select('credits')
+        .eq('id', user.id)
+        .single();
+      
+      if (updatedProfile) {
+        setCredits(updatedProfile.credits);
+      }
 
       // Clear inputs based on generation type
       switch (generationType) {

@@ -9,12 +9,10 @@ const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
 
-// Map frontend aspect ratios to image dimensions
+// Map frontend aspect ratios to model aspect ratios
 const aspectRatioMap = {
-  '16:9': { width: 1280, height: 720 },    // YouTube recommended dimensions
-  '1:1': { width: 1080, height: 1080 },    // Square format
-  '9:16': { width: 720, height: 1280 },    // Vertical video format
-  '4:5': { width: 1080, height: 1350 }     // Instagram recommended
+  '16:9': '16:9',
+  '9:16': '9:16'
 };
 
 export const TextThumbnailService = {
@@ -32,15 +30,24 @@ export const TextThumbnailService = {
         throw new Error('Insufficient credits');
       }
 
-      // Get dimensions based on aspect ratio
-      const dimensions = aspectRatioMap[aspectRatio] || aspectRatioMap['16:9'];
+      // Validate aspect ratio
+      if (!aspectRatioMap[aspectRatio]) {
+        throw new Error(`Invalid aspect ratio: ${aspectRatio}. Supported ratios are: ${Object.keys(aspectRatioMap).join(', ')}`);
+      }
 
       // Create input for Replicate (using flux-schnell model)
       const input = {
         prompt: text,
-        width: dimensions.width,
-        height: dimensions.height
+        go_fast: true,
+        megapixels: "1",
+        num_outputs: 1,
+        aspect_ratio: aspectRatioMap[aspectRatio],
+        output_format: "webp",
+        output_quality: 80,
+        num_inference_steps: 4
       };
+
+      console.log('Generating with input:', input);
 
       // Generate image using Replicate
       const output = await replicate.run(
