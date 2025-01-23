@@ -3,12 +3,14 @@ import cors from 'cors';
 import * as dotenv from 'dotenv';
 import { DatabaseService } from './services/database.js';
 import { AuthService } from './services/auth.js';
-import { generateThumbnail } from './controllers/thumbnailController.js';
+import { TextThumbnailService } from './services/text-thumbnail.js';
+import { ImageThumbnailService } from './services/image-thumbnail.js';
+import { YoutubeThumbnailService } from './services/youtube-thumbnail.js';
 
 dotenv.config();
 
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001;
 
 app.use(cors({
   origin: 'http://localhost:5173',
@@ -32,7 +34,64 @@ app.use('/public', express.static('public'));
 })();
 
 // Thumbnail generation endpoints
-app.post('/api/generate-thumbnail', generateThumbnail);
+app.post('/api/generate-thumbnail', async (req, res) => {
+  try {
+    const { 
+      userId, 
+      generationType, 
+      prompt, 
+      youtubeUrl,
+      videoTitle,
+      referenceImageUrl, 
+      aspectRatio, 
+      generationOption 
+    } = req.body;
+
+    // Basic validation
+    if (!userId || !aspectRatio || !generationType) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
+    let result;
+
+    switch (generationType) {
+      case 'text_to_thumbnail':
+        if (!prompt) {
+          return res.status(400).json({ error: 'Missing prompt for text generation' });
+        }
+        result = await TextThumbnailService.generateThumbnail(userId, prompt, aspectRatio);
+        break;
+      case 'image_to_thumbnail':
+        if (!prompt) {
+          return res.status(400).json({ error: 'Missing prompt for image generation' });
+        }
+        result = await ImageThumbnailService.generateThumbnail(userId, prompt, referenceImageUrl, aspectRatio);
+        break;
+      case 'youtube_to_thumbnail':
+        if (!youtubeUrl || !videoTitle) {
+          return res.status(400).json({ error: 'Missing YouTube URL or video title' });
+        }
+        result = await YoutubeThumbnailService.generateThumbnail(
+          userId, 
+          youtubeUrl, 
+          videoTitle, 
+          generationOption, 
+          aspectRatio, 
+          referenceImageUrl
+        );
+        break;
+      default:
+        throw new Error('Invalid generation type');
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error generating thumbnail:', error);
+    res.status(500).json({ 
+      error: error.message || 'Failed to generate thumbnail'
+    });
+  }
+});
 
 // Profile and auth endpoints
 app.get('/api/profile/:userId', async (req, res) => {

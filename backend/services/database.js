@@ -271,6 +271,55 @@ const DatabaseService = {
       throw error;
     }
   },
+
+  // Upload user image and store URL
+  async uploadUserImage(userId, file) {
+    if (!userId || !file) {
+      throw new Error('User ID and file are required for image upload');
+    }
+
+    try {
+      // Generate a unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+
+      // Upload file to user_store bucket
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('user_store')
+        .upload(fileName, file);
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        throw uploadError;
+      }
+
+      // Get the public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('user_store')
+        .getPublicUrl(fileName);
+
+      // Store the URL in user_images table
+      const { data: imageData, error: dbError } = await supabase
+        .from('user_images')
+        .insert({
+          user_id: userId,
+          image_url: publicUrl,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error('Error storing image URL:', dbError);
+        throw dbError;
+      }
+
+      return imageData;
+    } catch (error) {
+      console.error('Error in uploadUserImage:', error);
+      throw error;
+    }
+  },
 };
 
 export { DatabaseService };

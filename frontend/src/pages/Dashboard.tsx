@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
-import { AnimatedGallery } from '../components/ui/animated-gallery';
 import { 
   Zap, 
   Upload, 
@@ -23,6 +21,7 @@ import { useNavigate } from 'react-router-dom';
 import { UserProfile } from '../components/UserProfile';
 import { MyCreations } from '../components/MyCreations';
 import { Subscription } from '../components/Subscription';
+import toast, { Toaster } from 'react-hot-toast';
 
 type GenerationType = 'title' | 'image' | 'youtube' | 'custom';
 type AspectRatio = '16:9' | '9:16';
@@ -34,15 +33,13 @@ const YOUTUBE_URL_PATTERN = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watc
 export function Dashboard() {
   const [credits, setCredits] = useState<number | null>(null);
   const [activeSection, setActiveSection] = useState<MenuSection>('create');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [imageText, setImageText] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState('gaming');
   const [youtubePreview, setYoutubePreview] = useState<string | null>(null);
   const [youtubeError, setYoutubeError] = useState<string | null>(null);
-  const [generationType, setGenerationType] = useState<GenerationType>('title');
+  const [generationType, setGenerationType] = useState<GenerationType>('image');
   const [selectedRatio, setSelectedRatio] = useState<AspectRatio>('16:9');
   const [zoomedImage, setZoomedImage] = useState<{ url: string; title: string } | null>(null);
   const [user, setUser] = useState<any>(null);
@@ -60,6 +57,10 @@ export function Dashboard() {
   }>>([]);
   const [allGenerations, setAllGenerations] = useState<any[]>([]);
   const [isLoadingGenerations, setIsLoadingGenerations] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [existingImages, setExistingImages] = useState<Array<{id: string; image_url: string}>>([]);
+  const [selectedExistingImage, setSelectedExistingImage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -139,6 +140,12 @@ export function Dashboard() {
     }
   }, [activeSection]);
 
+  useEffect(() => {
+    if (user) {
+      fetchExistingImages();
+    }
+  }, [user]);
+
   const fetchAllGenerations = async () => {
     if (!user) return;
     setIsLoadingGenerations(true);
@@ -158,13 +165,21 @@ export function Dashboard() {
     }
   };
 
-  const templateOptions = [
-    { value: 'gaming', label: 'Gaming Thumbnail' },
-    { value: 'vlog', label: 'Vlog Cover' },
-    { value: 'tutorial', label: 'Tutorial Thumbnail' },
-    { value: 'review', label: 'Review Cover' },
-    { value: 'music', label: 'Music Cover' },
-  ];
+  const fetchExistingImages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_images')
+        .select('id, image_url')
+        .eq('profile_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setExistingImages(data || []);
+    } catch (err) {
+      console.error('Error fetching images:', err);
+      toast.error('Failed to load existing images');
+    }
+  };
 
   // Extract YouTube video ID and get thumbnail
   const getYoutubeThumbnail = (url: string) => {
@@ -207,6 +222,90 @@ export function Dashboard() {
       navigate('/');
     } catch (error) {
       console.error('Error logging out:', error);
+    }
+  };
+
+  const handleFileSelect = (file: File) => {
+    setSelectedFile(file);
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setPreviewImage(previewUrl);
+  };
+
+  const handleImageUpload = async () => {
+    if (!selectedFile || !user) {
+      setError('Please select an image first');
+      return;
+    }
+
+    try {
+      // Generate a unique file name
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      // Upload file to user_images bucket
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('user_images')
+        .upload(fileName, selectedFile);
+
+      if (uploadError) throw uploadError;
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('user_images')
+        .getPublicUrl(fileName);
+
+      // Store the URL in user_images table
+      const { data: imageData, error: dbError } = await supabase
+        .from('user_images')
+        .insert({
+          profile_id: user.id,
+          image_url: publicUrl,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (dbError) throw dbError;
+
+      // Show success toast
+      toast.success('Image uploaded successfully!', {
+        duration: 3000,
+        position: 'top-center',
+        style: {
+          background: '#070e41',
+          color: '#fff',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+        },
+      });
+
+      // Clear preview and selected file
+      setPreviewImage(null);
+      setSelectedFile(null);
+
+    } catch (err) {
+      console.error('Upload error:', err);
+      toast.error(err.message || 'Failed to upload image', {
+        duration: 3000,
+        position: 'top-center',
+        style: {
+          background: '#070e41',
+          color: '#fff',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+        },
+      });
+    }
+  };
+
+  const handleExistingImageSelect = (imageUrl: string) => {
+    // If clicking the same image, unselect it
+    if (selectedExistingImage === imageUrl) {
+      setSelectedExistingImage(null);
+    } else {
+      // Otherwise, select the new image
+      setSelectedExistingImage(imageUrl);
+      setPreviewImage(null);
+      setSelectedFile(null);
     }
   };
 
@@ -292,11 +391,64 @@ export function Dashboard() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-white/80 mb-2">Reference Image (Optional)</label>
+                    
+                    {/* Existing Images Section */}
+                    {existingImages.length > 0 && (
+                      <div className="mb-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                        <h3 className="text-sm font-medium text-white/80 mb-3">Your Uploaded Images</h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                          {existingImages.map((img) => (
+                            <div
+                              key={img.id}
+                              className={cn(
+                                "relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all",
+                                selectedExistingImage === img.image_url
+                                  ? "border-blue-500 ring-2 ring-blue-500"
+                                  : "border-transparent hover:border-white/20"
+                              )}
+                              onClick={() => handleExistingImageSelect(img.image_url)}
+                            >
+                              <img
+                                src={img.image_url}
+                                alt="User uploaded"
+                                className="w-full h-full object-cover"
+                              />
+                              {selectedExistingImage === img.image_url && (
+                                <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
+                                  <div className="bg-blue-500 rounded-full p-1">
+                                    <svg
+                                      className="w-4 h-4 text-white"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 13l4 4L19 7"
+                                      />
+                                    </svg>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Upload New Image Section */}
                     <div className="border-2 border-dashed border-white/10 rounded-lg p-4 md:p-8 text-center hover:border-[#3749be] transition-colors">
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={handleFileChange}
+                        onChange={(e) => {
+                          if (e.target.files) {
+                            handleFileSelect(e.target.files[0]);
+                            setSelectedExistingImage(null);
+                          }
+                        }}
                         className="hidden"
                         id="image-upload"
                       />
@@ -308,6 +460,17 @@ export function Dashboard() {
                         <p className="text-xs text-white/40">
                           Supports JPG, PNG, WEBP
                         </p>
+                        {previewImage && (
+                          <div className="mt-4">
+                            <img src={previewImage} alt="Preview" className="max-w-md max-h-64 rounded-lg mx-auto" />
+                            <button
+                              onClick={handleImageUpload}
+                              className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md"
+                            >
+                              Upload Image
+                            </button>
+                          </div>
+                        )}
                       </label>
                     </div>
                   </div>
@@ -318,20 +481,38 @@ export function Dashboard() {
                 <div className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-4">
-                      <label className="block text-sm font-medium text-white/80">YouTube URL</label>
-                      <input
-                        type="text"
-                        value={youtubeUrl}
-                        onChange={(e) => setYoutubeUrl(e.target.value)}
-                        placeholder="Enter YouTube video URL"
-                        className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                      />
-                      {youtubeError && (
-                        <div className="flex items-center gap-2 text-red-400 text-sm">
-                          <AlertCircle className="w-4 h-4" />
-                          {youtubeError}
-                        </div>
-                      )}
+                      {/* Video Title Input */}
+                      <div>
+                        <label className="block text-sm font-medium text-white/80">Video Title</label>
+                        <input
+                          type="text"
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                          placeholder="Enter your video title"
+                          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                        />
+                        <p className="mt-1 text-xs text-white/60">
+                          This will help generate a more relevant thumbnail
+                        </p>
+                      </div>
+
+                      {/* YouTube URL Input */}
+                      <div>
+                        <label className="block text-sm font-medium text-white/80">YouTube URL</label>
+                        <input
+                          type="text"
+                          value={youtubeUrl}
+                          onChange={(e) => setYoutubeUrl(e.target.value)}
+                          placeholder="Enter YouTube video URL"
+                          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                        />
+                        {youtubeError && (
+                          <div className="flex items-center gap-2 text-red-400 text-sm mt-1">
+                            <AlertCircle className="w-4 h-4" />
+                            {youtubeError}
+                          </div>
+                        )}
+                      </div>
                       
                       {/* YouTube Preview */}
                       {youtubeUrl && (
@@ -359,11 +540,64 @@ export function Dashboard() {
                             If you want to be in the thumbnail
                           </span>
                         </label>
+
+                        {/* Existing Images Section */}
+                        {existingImages.length > 0 && (
+                          <div className="mb-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                            <h3 className="text-sm font-medium text-white/80 mb-3">Your Uploaded Photos</h3>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                              {existingImages.map((img) => (
+                                <div
+                                  key={img.id}
+                                  className={cn(
+                                    "relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all",
+                                    selectedExistingImage === img.image_url
+                                      ? "border-blue-500 ring-2 ring-blue-500"
+                                      : "border-transparent hover:border-white/20"
+                                  )}
+                                  onClick={() => handleExistingImageSelect(img.image_url)}
+                                >
+                                  <img
+                                    src={img.image_url}
+                                    alt="User uploaded"
+                                    className="w-full h-full object-cover"
+                                  />
+                                  {selectedExistingImage === img.image_url && (
+                                    <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
+                                      <div className="bg-blue-500 rounded-full p-1">
+                                        <svg
+                                          className="w-4 h-4 text-white"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M5 13l4 4L19 7"
+                                          />
+                                        </svg>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Upload New Photo Section */}
                         <div className="border-2 border-dashed border-white/10 rounded-lg p-4 text-center hover:border-[#3749be] transition-colors">
                           <input
                             type="file"
                             accept="image/*"
-                            onChange={handleFileChange}
+                            onChange={(e) => {
+                              if (e.target.files) {
+                                handleFileSelect(e.target.files[0]);
+                                setSelectedExistingImage(null);
+                              }
+                            }}
                             className="hidden"
                             id="photo-upload"
                           />
@@ -375,15 +609,27 @@ export function Dashboard() {
                             <p className="text-xs text-white/40">
                               Supports JPG, PNG, WEBP
                             </p>
+                            {previewImage && (
+                              <div className="mt-4">
+                                <img src={previewImage} alt="Preview" className="max-w-xs max-h-64 rounded-lg mx-auto" />
+                                <button
+                                  onClick={handleImageUpload}
+                                  className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md"
+                                >
+                                  Upload Photo
+                                </button>
+                              </div>
+                            )}
                           </label>
                         </div>
                       </div>
                     </div>
                   </div>
+
                   {/* YouTube Generation Options */}
                   <div className="space-y-4">
                     <label className="block text-sm font-medium text-white/80">Choose Generation Option</label>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <button
                         type="button"
                         onClick={() => setGenerationOption('style')}
@@ -462,7 +708,7 @@ export function Dashboard() {
 
                {/* Generate Button */}
                <button 
-                onClick={handleGenerateThumbnail}
+                onClick={handleGenerate}
                 disabled={isGenerating || !user}
                 className="relative w-full inline-flex h-12 overflow-hidden rounded-full p-[2px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-50 mb-8 disabled:opacity-50 disabled:cursor-not-allowed">
                 <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#a2aeff_0%,#3749be_50%,#a2aeff_100%)] dark:bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
@@ -492,14 +738,8 @@ export function Dashboard() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 {userGenerations.slice(0, 4).map((generation) => (
-                  <motion.div
+                  <div
                     key={generation.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    onClick={() => setZoomedImage({ 
-                      url: generation.output_image_url, 
-                      title: new Date(generation.created_at).toLocaleDateString() 
-                    })}
                     className={cn(
                       "group relative rounded-xl overflow-hidden cursor-zoom-in h-full",
                       "bg-white/5 backdrop-blur-sm border border-white/10",
@@ -507,15 +747,17 @@ export function Dashboard() {
                       "transition-all duration-300",
                       "aspect-video"
                     )}
+                    onClick={() => setZoomedImage({ 
+                      url: generation.output_image_url, 
+                      title: new Date(generation.created_at).toLocaleDateString() 
+                    })}
                   >
-                    <motion.img
+                    <img
                       src={generation.output_image_url}
                       alt={`Generated on ${new Date(generation.created_at).toLocaleDateString()}`}
                       className="w-full h-full object-cover"
-                      whileHover={{ scale: 1.05 }}
-                      transition={{ duration: 0.3 }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <div className="absolute inset-0 flex flex-col justify-end p-4">
                         <p className="text-white text-sm font-medium">
                           {new Date(generation.created_at).toLocaleDateString()}
@@ -525,30 +767,23 @@ export function Dashboard() {
                         </p>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </div>
 
             {/* Image Zoom Modal */}
             {zoomedImage && (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 md:p-8"
+              <div 
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
                 onClick={() => setZoomedImage(null)}
               >
                 <div 
                   className="relative w-full h-full flex items-center justify-center"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <motion.div
+                  <div
                     className="relative max-w-full max-h-full flex items-center justify-center"
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.9, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
                   >
                     <img
                       src={zoomedImage.url}
@@ -604,9 +839,9 @@ export function Dashboard() {
                         Generated on {zoomedImage.title}
                       </p>
                     </div>
-                  </motion.div>
+                  </div>
                 </div>
-              </motion.div>
+              </div>
             )}
           </>
         );
@@ -650,99 +885,121 @@ export function Dashboard() {
     }
   };
 
-  const handleGenerateThumbnail = async () => {
+  const handleGenerate = async () => {
     if (!user) {
-      setError('Please log in to generate thumbnails');
+      toast.error('Please sign in to generate thumbnails');
       return;
+    }
+
+    if (!selectedRatio) {
+      toast.error('Please select an aspect ratio');
+      return;
+    }
+
+    let requestData: any = {
+      userId: user.id,
+      aspectRatio: selectedRatio
+    };
+
+    // Validate and prepare data based on generation type
+    switch (generationType) {
+      case 'image':
+        if (!imageText) {
+          toast.error('Please provide an image description');
+          return;
+        }
+        requestData = {
+          ...requestData,
+          generationType: 'image_to_thumbnail',
+          prompt: imageText,
+          referenceImageUrl: selectedExistingImage
+        };
+        break;
+
+      case 'title':
+        if (!title) {
+          toast.error('Please enter a title');
+          return;
+        }
+        requestData = {
+          ...requestData,
+          generationType: 'text_to_thumbnail',
+          prompt: title
+        };
+        break;
+
+      case 'youtube':
+        if (!youtubeUrl) {
+          toast.error('Please enter a YouTube URL');
+          return;
+        }
+        if (!title) {
+          toast.error('Please enter a video title');
+          return;
+        }
+        requestData = {
+          ...requestData,
+          generationType: 'youtube_to_thumbnail',
+          youtubeUrl: youtubeUrl,
+          videoTitle: title,
+          generationOption,
+          referenceImageUrl: selectedExistingImage
+        };
+        break;
+
+      default:
+        toast.error('Invalid generation type');
+        return;
     }
 
     setIsGenerating(true);
     setError(null);
 
     try {
-      let payload = {};
-
-      switch (generationType) {
-        case 'title':
-          payload = { 
-            title, 
-            userId: user.id,
-            generationType: 'text_to_thumbnail',
-            aspectRatio: selectedRatio
-          };
-          break;
-        case 'image':
-          payload = { 
-            imageText, 
-            imageUrl: selectedFile, 
-            userId: user.id,
-            generationType: 'image_to_thumbnail',
-            aspectRatio: selectedRatio
-          };
-          break;
-        case 'youtube':
-          payload = { 
-            youtubeUrl, 
-            userId: user.id,
-            generationType: 'youtube_to_thumbnail',
-            generationOption,
-            aspectRatio: selectedRatio
-          };
-          break;
-        default:
-          throw new Error('Invalid generation type');
-      }
-
       const response = await fetch('http://localhost:3001/api/generate-thumbnail', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(requestData),
       });
 
-      const contentType = response.headers.get('content-type');
-      let data;
-      
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        const text = await response.text();
-        throw new Error(`Unexpected response: ${text}`);
-      }
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to generate thumbnail');
       }
 
-      // Set the generated images and show popup
-      setGeneratedImages(data.images);
+      // Add the new generation to the list
+      setUserGenerations(prev => [data, ...prev]);
+      
+      // Set the generated image and show popup
+      setGeneratedImages([data.output_image_url]);
       setShowGeneratedPopup(true);
-      
-      // Refresh credits and generations after successful generation
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('credits')
-        .eq('id', user.id)
-        .single();
-      
-      if (profile) {
-        setCredits(profile.credits);
+
+      // Clear inputs based on generation type
+      switch (generationType) {
+        case 'image':
+          setImageText('');
+          setSelectedExistingImage(null);
+          setPreviewImage(null);
+          setSelectedFile(null);
+          break;
+        case 'title':
+          setTitle('');
+          break;
+        case 'youtube':
+          setYoutubeUrl('');
+          setYoutubePreview(null);
+          break;
       }
 
-      // Fetch updated generations
-      const { data: generations } = await supabase
-        .from('generations')
-        .select('*')
-        .eq('profile_id', user.id)
-        .order('created_at', { ascending: false });
+      // Show success message
+      toast.success('Thumbnail generated successfully!');
 
-      if (generations) {
-        setUserGenerations(generations);
-      }
-    } catch (err) {
-      console.error('Error generating thumbnail:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate thumbnail');
+    } catch (err: any) {
+      console.error('Generation error:', err);
+      toast.error(err.message || 'Failed to generate thumbnail');
     } finally {
       setIsGenerating(false);
     }
@@ -752,16 +1009,20 @@ export function Dashboard() {
     try {
       const response = await fetch(url);
       const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
+      const objectUrl = URL.createObjectURL(blob);
+      
       const link = document.createElement('a');
-      link.href = blobUrl;
+      link.href = objectUrl;
       link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
+      URL.revokeObjectURL(objectUrl);
+
+      toast.success('Download started!');
     } catch (error) {
-      console.error('Download failed:', error);
+      console.error('Download error:', error);
+      toast.error('Failed to download image');
     }
   };
 
@@ -769,48 +1030,105 @@ export function Dashboard() {
   const GeneratedImagesPopup = () => {
     if (!showGeneratedPopup || generatedImages.length === 0) return null;
 
+    // Close popup when clicking outside
+    const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.target === e.currentTarget) {
+        setShowGeneratedPopup(false);
+      }
+    };
+
+    // Close popup with escape key
+    useEffect(() => {
+      const handleEscKey = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          setShowGeneratedPopup(false);
+        }
+      };
+
+      window.addEventListener('keydown', handleEscKey);
+      return () => window.removeEventListener('keydown', handleEscKey);
+    }, []);
+
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div className="relative max-w-4xl w-full mx-4 bg-[#070e41] rounded-xl overflow-hidden border border-white/10">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-white">Generated Thumbnails</h3>
+      <div 
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-6"
+        onClick={handleBackdropClick}
+      >
+        <div className="relative max-w-4xl w-full bg-gradient-to-b from-[#0f1729] to-[#070e41] rounded-xl overflow-hidden border border-white/10 shadow-2xl max-h-[90vh] flex flex-col">
+          {/* Absolute positioned close button for mobile */}
+          <button
+            onClick={() => setShowGeneratedPopup(false)}
+            className="absolute top-2 right-2 z-10 p-2 text-white/60 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition-all duration-200 md:hidden"
+            aria-label="Close popup"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Header */}
+          <div className="p-4 md:p-6 border-b border-white/10">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl md:text-2xl font-bold text-white bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                Generated Thumbnails
+              </h3>
+              {/* Desktop close button */}
               <button
                 onClick={() => setShowGeneratedPopup(false)}
-                className="text-white/60 hover:text-white transition-colors"
+                className="hidden md:flex text-white/60 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            
-            <div className="grid grid-cols-1 gap-4">
+          </div>
+          
+          {/* Content - Scrollable */}
+          <div className="p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto flex-grow">
+            <div className="grid grid-cols-1 gap-4 md:gap-6">
               {generatedImages.map((imageUrl, index) => (
-                <div key={index} className="relative group">
-                  <img
-                    src={imageUrl}
-                    alt={`Generated thumbnail ${index + 1}`}
-                    className="w-full h-auto rounded-lg border border-white/10"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 rounded-lg">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownload(
-                          imageUrl,
-                          `thumbnail-${index + 1}.png`
-                        );
-                      }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Download
-                    </button>
+                <div key={index} className="relative group rounded-xl overflow-hidden bg-gradient-to-r from-blue-500/10 to-purple-500/10 p-1">
+                  <div className="relative aspect-video rounded-lg overflow-hidden">
+                    <img
+                      src={imageUrl}
+                      alt={`Generated thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="absolute bottom-0 left-0 right-0 p-4 flex justify-center space-x-4">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownload(imageUrl, `thumbnail-${index + 1}.png`);
+                          }}
+                          className="px-4 md:px-6 py-2 md:py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-lg shadow-blue-600/20 transition-all duration-200 flex items-center space-x-2 transform hover:-translate-y-0.5"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                          <span>Download</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="p-4 md:p-6 border-t border-white/10 bg-black/20">
+            <div className="flex flex-col md:flex-row justify-between items-center space-y-3 md:space-y-0">
+              <p className="text-sm text-white/60 text-center md:text-left">
+                Click the download button to save your thumbnail
+              </p>
+              <button
+                onClick={() => setShowGeneratedPopup(false)}
+                className="w-full md:w-auto px-4 py-2 text-sm text-white/80 hover:text-white border border-white/20 hover:border-white/40 rounded-lg transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -819,7 +1137,8 @@ export function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="flex flex-col min-h-screen bg-gray-900 text-white">
+      <Toaster />
       {/* Side Menu */}
       <div className="fixed top-0 bottom-0 left-0 z-50 w-64 bg-background/30 backdrop-blur-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 hidden lg:block">
         <div className="h-full flex flex-col p-4 pt-8">
@@ -866,7 +1185,6 @@ export function Dashboard() {
                       item.onClick();
                     } else {
                       setActiveSection(item.id as MenuSection);
-                      setIsMobileMenuOpen(false);
                     }
                   }}
                   className={`
@@ -929,7 +1247,6 @@ export function Dashboard() {
                   } else {
                     setActiveSection(item.id as MenuSection);
                   }
-                  setIsMobileMenuOpen(false);
                 }}
                 className={`
                   relative p-2
