@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
 import { cn } from '../lib/utils';
 
 interface MyCreationsProps {
@@ -11,6 +11,80 @@ interface MyCreationsProps {
   zoomedImage: { url: string; title: string } | null;
   onCloseZoom: () => void;
 }
+
+interface GenerationItemProps {
+  generation: any;
+  onZoomImage: (image: { url: string; title: string }) => void;
+  onDownload: (url: string, filename: string) => void;
+}
+
+const GenerationItem: React.FC<GenerationItemProps> = ({ generation, onZoomImage, onDownload }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+
+  return (
+    <motion.figure
+      ref={ref}
+      initial="hidden"
+      animate={isInView ? "visible" : "hidden"}
+      whileTap={{ scale: 0.98 }}
+      className={cn(
+        "inline-block w-full mb-4 rounded-xl relative",
+        "bg-white/5 backdrop-blur-sm overflow-hidden",
+        "group cursor-zoom-in"
+      )}
+      onClick={() => onZoomImage({ 
+        url: generation.output_image_url, 
+        title: new Date(generation.created_at).toLocaleDateString() 
+      })}
+    >
+      <motion.img
+        layoutId={`image-${generation.id}`}
+        src={generation.output_image_url}
+        alt={`Generated on ${new Date(generation.created_at).toLocaleDateString()}`}
+        className="w-full bg-white/5 shadow-xl"
+        whileHover={{ scale: 1.02 }}
+        transition={{ duration: 0.2 }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+        <div className="absolute inset-0 flex flex-col justify-end p-4">
+          <p className="text-white text-sm font-medium">
+            {new Date(generation.created_at).toLocaleDateString()}
+          </p>
+          <p className="text-white/60 text-xs">
+            {generation.generation_type.replace(/_/g, ' ')}
+          </p>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDownload(
+                generation.output_image_url,
+                `thumbnail-${new Date(generation.created_at).toLocaleDateString()}.png`
+              );
+            }}
+            className="mt-2 px-3 py-1.5 bg-blue-600/90 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5 w-fit"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-4 w-4" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              />
+            </svg>
+            Download
+          </button>
+        </div>
+      </div>
+    </motion.figure>
+  );
+};
 
 export const MyCreations: React.FC<MyCreationsProps> = ({
   isLoading,
@@ -53,68 +127,14 @@ export const MyCreations: React.FC<MyCreationsProps> = ({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4">
             {generations.map((generation) => (
-              <motion.div
+              <GenerationItem
                 key={generation.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                onClick={() => onZoomImage({ 
-                  url: generation.output_image_url, 
-                  title: new Date(generation.created_at).toLocaleDateString() 
-                })}
-                className={cn(
-                  "group relative rounded-xl overflow-hidden cursor-zoom-in h-full",
-                  "bg-white/5 backdrop-blur-sm border border-white/10",
-                  "hover:border-[#3749be] hover:shadow-lg hover:shadow-[#3749be]/20",
-                  "transition-all duration-300",
-                  "aspect-video"
-                )}
-              >
-                <motion.img
-                  src={generation.output_image_url}
-                  alt={`Generated on ${new Date(generation.created_at).toLocaleDateString()}`}
-                  className="w-full h-full object-cover"
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.3 }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
-                  <div className="absolute inset-0 flex flex-col justify-end p-4">
-                    <p className="text-white text-sm font-medium">
-                      {new Date(generation.created_at).toLocaleDateString()}
-                    </p>
-                    <p className="text-white/60 text-xs">
-                      {generation.generation_type.replace(/_/g, ' ')}
-                    </p>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDownload(
-                          generation.output_image_url,
-                          `thumbnail-${new Date(generation.created_at).toLocaleDateString()}.png`
-                        );
-                      }}
-                      className="mt-2 px-3 py-1.5 bg-blue-600/90 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5 w-fit"
-                    >
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        className="h-4 w-4" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={2} 
-                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                        />
-                      </svg>
-                      Download
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
+                generation={generation}
+                onZoomImage={onZoomImage}
+                onDownload={onDownload}
+              />
             ))}
           </div>
 
