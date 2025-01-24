@@ -5,7 +5,7 @@ import { Play, ArrowRight } from 'lucide-react';
 
 export function Hero() {
   return (
-    <section className="relative min-h-screen">
+    <section className="relative min-h-[calc(100vh-4rem)]">
       {/* Animated Squares Background */}
       <div className="absolute inset-0 overflow-hidden">
         <Squares 
@@ -18,8 +18,8 @@ export function Hero() {
       </div>
 
       <div className="relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 lg:pt-32">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left Column - Content */}
             <div className="relative">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 text-blue-400 font-medium text-sm mb-6">
@@ -42,7 +42,7 @@ export function Hero() {
                 Ideate & package your videos faster & cheaper.
               </p>
               
-              <div className="flex flex-wrap gap-4 mb-12">
+              <div className="flex flex-wrap gap-4 mb-8 lg:mb-12">
                 <button className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-full font-semibold flex items-center gap-2 transition-all shadow-lg hover:shadow-blue-500/25">
                   Try for Free
                   <ArrowRight className="w-4 h-4" />
@@ -65,7 +65,7 @@ export function Hero() {
             </div>
 
             {/* Right Column - Carousel */}
-            <div className="relative lg:-mr-32">
+            <div className="relative lg:-mr-32 mt-8 lg:mt-0">
               <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-transparent lg:hidden" />
               <ThreeDPhotoCarousel />
             </div>

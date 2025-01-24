@@ -51,15 +51,17 @@ function AppRoutes() {
       <Route 
         path="/" 
         element={
-          <div>
+          <div className="flex flex-col min-h-screen overflow-hidden bg-background">
             <NavBarDemo />
-            <Hero />
-            <Features />
-            <Statistics />
-            <PlatformSupport />
-            <Testimonials />
-            <Pricing />
-            <FAQ />
+            <main className="flex-grow">
+              <Hero />
+              <Features />
+              <Statistics />
+              <PlatformSupport />
+              <Testimonials />
+              <Pricing />
+              <FAQ />
+            </main>
             <Footer />
           </div>
         } 
@@ -73,7 +75,7 @@ function App() {
     <Router>
       <AuthProvider>
         <ProfileProvider>
-          <div className="min-h-screen">
+          <div className="min-h-screen bg-background">
             <AppRoutes />
           </div>
         </ProfileProvider>

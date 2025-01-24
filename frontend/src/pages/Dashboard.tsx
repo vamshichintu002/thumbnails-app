@@ -379,7 +379,7 @@ export function Dashboard() {
               {/* Generation Type Selector */}
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold">Generation Type</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-3 gap-4 md:grid-cols-3">
                   {/* Generation type buttons */}
                   {tabs.map((tab) => {
                     const Icon = tab.icon;
