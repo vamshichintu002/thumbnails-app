@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Check, Star, Image } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface SubscriptionProps {
@@ -8,20 +9,68 @@ interface SubscriptionProps {
   onUpgrade: () => void;
 }
 
-interface PlanFeature {
-  name: string;
-  free: boolean | string;
-  pro: boolean | string;
-}
-
-const planFeatures: PlanFeature[] = [
-  { name: 'Thumbnail Generation Credits', free: '5/month', pro: 'Unlimited' },
-  { name: 'AI-Powered Generation', free: true, pro: true },
-  { name: 'Custom Thumbnail Upload', free: true, pro: true },
-  { name: 'Download Generated Images', free: true, pro: true },
-  { name: 'Priority Generation', free: false, pro: true },
-  { name: 'Advanced Customization', free: false, pro: true },
-  { name: 'Priority Support', free: false, pro: true },
+const plans = [
+  {
+    name: "BASIC",
+    price: "15",
+    yearlyPrice: "10",
+    period: "per month",
+    credits: "250 credits",
+    features: [
+      "Up to 25 images per month",
+      "Text to thumbnail",
+      "Generate thumbnail from YouTube",
+      "Generate thumbnail using your face",
+      "Generate thumbnail with face and YouTube image reference",
+      "Thumbnail enhancer",
+      "All generations stay private",
+    ],
+    description: "Perfect for content creators getting started",
+    buttonText: "Get Started",
+    href: "#",
+    isPopular: false,
+  },
+  {
+    name: "PRO",
+    price: "25",
+    yearlyPrice: "20",
+    period: "per month",
+    credits: "500 credits",
+    features: [
+      "Up to 50 images per month",
+      "Access to all models",
+      "Text to thumbnail",
+      "Generate thumbnail from YouTube",
+      "Generate thumbnail using your face",
+      "Generate thumbnail with face and YouTube image reference",
+      "Thumbnail enhancer",
+      "Generate TOP YouTuber channels style thumbnail",
+      "Generate TOP YouTuber channels style with your face",
+      "All generations stay private",
+    ],
+    description: "Best for professional content creators",
+    buttonText: "Get Started",
+    href: "#",
+    isPopular: true,
+  },
+  {
+    name: "CREDIT PACKS",
+    price: "10",
+    yearlyPrice: "10",
+    period: "one-time",
+    credits: "250 credits",
+    features: [
+      "Purchase only credits after exhausting monthly credits",
+      "10$ = 250 credits",
+      "20$ = 500 credits",
+      "Use anytime",
+      "Never expires",
+    ],
+    description: "Additional credits when you need them",
+    buttonText: "Buy Credits",
+    href: "#",
+    isPopular: false,
+  },
 ];
 
 export const Subscription: React.FC<SubscriptionProps> = ({
@@ -29,143 +78,138 @@ export const Subscription: React.FC<SubscriptionProps> = ({
   isLoadingCredits,
   onUpgrade,
 }) => {
+  const [isYearly, setIsYearly] = useState(true);
+
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Subscription</h2>
+        <h2 className="text-2xl font-bold mb-2">My Subscription</h2>
         <p className="text-white/60">
           Choose the plan that best fits your needs
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Free Plan */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+      {/* Billing Toggle */}
+      <div className="flex justify-start items-center gap-3 mb-8">
+        <span className={cn(
+          "text-sm font-medium transition-colors",
+          !isYearly ? "text-foreground" : "text-muted-foreground"
+        )}>
+          Monthly
+        </span>
+        <button
+          onClick={() => setIsYearly(!isYearly)}
           className={cn(
-            "rounded-xl p-6 space-y-6",
-            "bg-white/5 backdrop-blur-sm border border-white/10",
+            "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+            "bg-blue-600 focus-visible:outline-none focus-visible:ring-2",
+            "focus-visible:ring-blue-500 focus-visible:ring-offset-2"
           )}
         >
-          <div>
-            <h3 className="text-xl font-semibold">Free Plan</h3>
-            <p className="text-white/60 mt-1">Perfect for getting started</p>
-          </div>
-
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-bold">$0</span>
-            <span className="text-white/60">/month</span>
-          </div>
-
-          {isLoadingCredits ? (
-            <div className="h-6 w-32 animate-pulse bg-white/10 rounded"></div>
-          ) : (
-            <p className="text-white/80">
-              {credits} credits remaining this month
-            </p>
-          )}
-
-          <ul className="space-y-3">
-            {planFeatures.map((feature) => (
-              <li 
-                key={feature.name}
-                className="flex items-center gap-2 text-sm"
-              >
-                {typeof feature.free === 'boolean' ? (
-                  feature.free ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white/20" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  )
-                ) : (
-                  <span className="text-blue-400 font-medium">{feature.free}</span>
-                )}
-                <span className={cn(
-                  typeof feature.free === 'boolean' && !feature.free && 'text-white/40'
-                )}>
-                  {feature.name}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          <button 
-            disabled
-            className="w-full px-4 py-2 rounded-lg bg-white/5 text-white/40 cursor-not-allowed"
-          >
-            Current Plan
-          </button>
-        </motion.div>
-
-        {/* Pro Plan */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className={cn(
-            "rounded-xl p-6 space-y-6",
-            "bg-gradient-to-br from-blue-600/20 to-purple-600/20 backdrop-blur-sm",
-            "border border-white/20",
-          )}
-        >
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="text-xl font-semibold">Pro Plan</h3>
-              <p className="text-white/60 mt-1">For power users</p>
-            </div>
-            <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30">
-              Popular
-            </span>
-          </div>
-
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-bold">$9.99</span>
-            <span className="text-white/60">/month</span>
-          </div>
-
-          <p className="text-white/80">Unlimited credits</p>
-
-          <ul className="space-y-3">
-            {planFeatures.map((feature) => (
-              <li 
-                key={feature.name}
-                className="flex items-center gap-2 text-sm"
-              >
-                {typeof feature.pro === 'boolean' ? (
-                  feature.pro ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white/20" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  )
-                ) : (
-                  <span className="text-blue-400 font-medium">{feature.pro}</span>
-                )}
-                <span>{feature.name}</span>
-              </li>
-            ))}
-          </ul>
-
-          <button 
-            onClick={onUpgrade}
+          <span
             className={cn(
-              "w-full px-4 py-2 rounded-lg",
-              "bg-blue-600 hover:bg-blue-700",
-              "transition-colors duration-200"
+              "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+              isYearly ? "translate-x-6" : "translate-x-1"
+            )}
+          />
+        </button>
+        <span className={cn(
+          "text-sm font-medium transition-colors",
+          isYearly ? "text-foreground" : "text-muted-foreground"
+        )}>
+          Yearly <span className="text-blue-400">(Save 20%)</span>
+        </span>
+      </div>
+
+      {/* Credits Display */}
+      {isLoadingCredits ? (
+        <div className="h-6 w-32 animate-pulse bg-white/10 rounded mb-8"></div>
+      ) : (
+        <div className="flex items-center gap-2 mb-8">
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+            <Image className="w-5 h-5 text-blue-400" />
+          </div>
+          <div>
+            <p className="text-white/80 font-medium">
+              {credits} credits remaining
+            </p>
+            <p className="text-sm text-white/60">
+              Your current usage this month
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Plans Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {plans.map((plan, index) => (
+          <motion.div
+            key={plan.name}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ 
+              opacity: 1, 
+              y: plan.isPopular ? -20 : 0,
+              scale: plan.isPopular ? 1.05 : 1
+            }}
+            transition={{ 
+              delay: index * 0.1,
+              duration: 0.5
+            }}
+            className={cn(
+              "relative rounded-2xl p-8",
+              "bg-muted/50 backdrop-blur-sm",
+              "border border-white/10",
+              plan.isPopular ? "border-blue-500/50 shadow-lg shadow-blue-500/20" : ""
             )}
           >
-            Upgrade to Pro
-          </button>
-        </motion.div>
+            {plan.isPopular && (
+              <div className="absolute -top-4 left-0 right-0 flex justify-center">
+                <span className="bg-blue-600 text-white text-sm font-medium px-3 py-1 rounded-full inline-flex items-center gap-1">
+                  <Star className="w-4 h-4 fill-current" /> Most Popular
+                </span>
+              </div>
+            )}
+
+            <div className="text-center mb-8">
+              <h3 className="text-lg font-semibold mb-2">{plan.name}</h3>
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-4xl font-bold">
+                  ${isYearly ? plan.yearlyPrice : plan.price}
+                </span>
+                <span className="text-muted-foreground">/{plan.period}</span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                {plan.credits}
+                {plan.period !== "one-time" && (
+                  <span className="block">
+                    {isYearly ? "Billed annually" : "Billed monthly"}
+                  </span>
+                )}
+              </p>
+            </div>
+
+            <ul className="space-y-4 mb-8">
+              {plan.features.map((feature, idx) => (
+                <li key={idx} className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                  <span className="text-sm text-muted-foreground">{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            <button
+              onClick={onUpgrade}
+              className={cn(
+                "w-full py-3 px-4 rounded-xl font-medium transition-all",
+                "border border-white/10 hover:border-blue-500/50",
+                "bg-gradient-to-r from-blue-600/10 to-blue-400/10",
+                "hover:from-blue-600 hover:to-blue-400 hover:text-white",
+                plan.isPopular ? "from-blue-600 to-blue-400 text-white" : "text-muted-foreground"
+              )}
+            >
+              {plan.buttonText}
+            </button>
+          </motion.div>
+        ))}
       </div>
     </div>
   );

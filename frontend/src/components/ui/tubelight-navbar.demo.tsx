@@ -18,9 +18,8 @@ export function NavBarDemo() {
   ];
 
   const logo = (
-    <a href="/" className="flex items-center gap-2 text-xl font-bold">
-      <Youtube className="w-6 h-6" />
-      <span>ThumbAI</span>
+    <a href="/" className="flex items-center gap-4">
+      <img src="/logo.png" alt="ThumbAI Logo" className="h-12 w-auto" />
     </a>
   )
 

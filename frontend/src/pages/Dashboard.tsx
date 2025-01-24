@@ -370,7 +370,10 @@ export function Dashboard() {
           <>
             <div className="space-y-8">
               <div className="flex flex-col gap-4">
-                <h1 className="text-2xl font-bold">Generate Thumbnail</h1>
+                <div className="flex items-center gap-4">
+                  <img src="/logo.png" alt="ThumbAI Logo" className="h-12 w-auto" />
+               
+                </div>
                 <p className="text-white/60">
                   Create stunning thumbnails for your content using AI.
                 </p>
@@ -388,11 +391,14 @@ export function Dashboard() {
                       <button
                         key={tab.id}
                         onClick={() => setGenerationType(tab.id as GenerationType)}
-                        className={`relative flex items-center justify-center p-4 rounded-xl transition-all duration-300 ${
+                        className={`relative flex flex-col items-center gap-2 p-4 rounded-xl transition-all duration-300 ${
                           getSelectionClasses(isActive)
                         }`}
                       >
                         <Icon className="w-6 h-6 text-white" />
+                        <div className="text-xs text-white/60">
+                          {tab.id === 'title' ? '10 Credits' : '20 Credits'}
+                        </div>
                       </button>
                     );
                   })}
@@ -773,38 +779,47 @@ export function Dashboard() {
                 </button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                {userGenerations.slice(0, 4).map((generation) => (
-                  <div
-                    key={generation.id}
-                    className={cn(
-                      "group relative rounded-xl overflow-hidden cursor-zoom-in h-full",
-                      "bg-white/5 backdrop-blur-sm border border-white/10",
-                      "hover:border-[#3749be] hover:shadow-lg hover:shadow-[#3749be]/20",
-                      "transition-all duration-300",
-                      "aspect-video"
-                    )}
-                    onClick={() => setZoomedImage({ 
-                      url: generation.output_image_url, 
-                      title: new Date(generation.created_at).toLocaleDateString() 
-                    })}
-                  >
-                    <img
-                      src={generation.output_image_url}
-                      alt={`Generated on ${new Date(generation.created_at).toLocaleDateString()}`}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="absolute inset-0 flex flex-col justify-end p-4">
-                        <p className="text-white text-sm font-medium">
-                          {new Date(generation.created_at).toLocaleDateString()}
-                        </p>
-                        <p className="text-white/60 text-xs">
-                          {generation.generation_type.replace(/_/g, ' ')}
-                        </p>
-                      </div>
+                {isGenerating ? (
+                  <div className="col-span-1 sm:col-span-2 md:col-span-4 flex items-center justify-center p-12">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-12 h-12 border-4 border-[#3749be] border-t-transparent rounded-full animate-spin"></div>
+                      <p className="text-white/60 text-sm">Generating your thumbnail...</p>
                     </div>
                   </div>
-                ))}
+                ) : (
+                  userGenerations.slice(0, 4).map((generation) => (
+                    <div
+                      key={generation.id}
+                      className={cn(
+                        "group relative rounded-xl overflow-hidden cursor-zoom-in h-full",
+                        "bg-white/5 backdrop-blur-sm border border-white/10",
+                        "hover:border-[#3749be] hover:shadow-lg hover:shadow-[#3749be]/20",
+                        "transition-all duration-300",
+                        "aspect-video"
+                      )}
+                      onClick={() => setZoomedImage({ 
+                        url: generation.output_image_url, 
+                        title: new Date(generation.created_at).toLocaleDateString() 
+                      })}
+                    >
+                      <img
+                        src={generation.output_image_url}
+                        alt={`Generated on ${new Date(generation.created_at).toLocaleDateString()}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute inset-0 flex flex-col justify-end p-4">
+                          <p className="text-white text-sm font-medium">
+                            {new Date(generation.created_at).toLocaleDateString()}
+                          </p>
+                          <p className="text-white/60 text-xs">
+                            {generation.generation_type.replace(/_/g, ' ')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
