@@ -78,6 +78,35 @@ async function analyzeImageWithGroq(imageUrl, prompt) {
   }
 }
 
+// Direct API call to Nebius AI
+async function generateImageWithNebiusAI(prompt, { width, height }, referenceImage = null) {
+  const response = await fetch('https://api.studio.nebius.ai/v1/images/generations', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.NEBIUS_API_KEY}`
+    },
+    body: JSON.stringify({
+      prompt,
+      model: "black-forest-labs/flux-dev",
+      n: 1,
+      width,
+      height,
+      response_extension: "webp",
+      num_inference_steps: 15,
+      image: referenceImage
+    })
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Nebius AI API error: ${response.status} ${text}`);
+  }
+
+  const data = await response.json();
+  return data;
+}
+
 async function uploadToSupabase(imageUrl, userId) {
   try {
     // Download image from URL
@@ -145,12 +174,12 @@ export const YoutubeThumbnailService = {
       const dimensions = aspectRatioMap[aspectRatio] || aspectRatioMap['16:9'];
 
       // Always analyze the YouTube thumbnail style when user photo is provided
-      let replicateOutput;
+      let generatedImageUrl;
       if (referenceImageUrl) {
         // Case 3: With user photo - always use style analysis regardless of generation option
         const imageAnalysis = await analyzeImageWithGroq(youtubeThumbnailUrl, GROQ_PROMPTS.style);
         
-        replicateOutput = await replicate.run(
+        const replicateOutput = await replicate.run(
           "bytedance/flux-pulid:8baa7ef2255075b46f4d91cd238c21d31181b3e6a864463f967960bb0112525b",
           {
             input: {
@@ -164,32 +193,30 @@ export const YoutubeThumbnailService = {
             }
           }
         );
+        
+        if (!replicateOutput || !replicateOutput[0]) {
+          throw new Error('Failed to generate thumbnail');
+        }
+        generatedImageUrl = replicateOutput[0];
       } else {
-        // Case 1 & 2: Without user photo
+        // Case 1 & 2: Without user photo - Use Nebius AI
         const groqPrompt = GROQ_PROMPTS[generationOption] || GROQ_PROMPTS.style;
         const imageAnalysis = await analyzeImageWithGroq(youtubeThumbnailUrl, groqPrompt);
         
-        replicateOutput = await replicate.run(
-          "black-forest-labs/flux-schnell",
-          {
-            input: {
-              prompt: `${imageAnalysis} Create a YouTube thumbnail for "${videoTitle}"`,
-              image: youtubeThumbnailUrl,
-              num_outputs: 1,
-              width: dimensions.width,
-              height: dimensions.height,
-              aspect_ratio: aspectRatio
-            }
-          }
+        const result = await generateImageWithNebiusAI(
+          `${imageAnalysis} Create a YouTube thumbnail for "${videoTitle}"`,
+          dimensions,
+          youtubeThumbnailUrl
         );
-      }
-
-      if (!replicateOutput || !replicateOutput[0]) {
-        throw new Error('Failed to generate thumbnail');
+        
+        if (!result || !result.data?.[0]?.url) {
+          throw new Error('Failed to generate thumbnail');
+        }
+        generatedImageUrl = result.data[0].url;
       }
 
       // Upload generated image to Supabase and get public URL
-      const outputImageUrl = await uploadToSupabase(replicateOutput[0], userId);
+      const outputImageUrl = await uploadToSupabase(generatedImageUrl, userId);
 
       // Create generation record
       const { data: generationData, error: generationError } = await supabase

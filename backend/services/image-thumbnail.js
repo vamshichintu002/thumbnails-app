@@ -38,7 +38,7 @@ export const ImageThumbnailService = {
       // Create input for Replicate
       const input = {
         prompt,
-        start_step: 4,
+        start_step: 3,
         num_outputs: 1,
         output_format: 'png',
         negative_prompt: "bad quality, worst quality, text, signature, watermark, extra limbs",

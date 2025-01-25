@@ -1,18 +1,41 @@
-import Replicate from "replicate";
 import { supabase } from './supabase.js';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 
 dotenv.config();
 
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
-});
+// Direct API call to Nebius AI
+async function generateImageWithNebiusAI(prompt, { width, height }) {
+  const response = await fetch('https://api.studio.nebius.ai/v1/images/generations', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.NEBIUS_API_KEY}`
+    },
+    body: JSON.stringify({
+      prompt,
+      model: "black-forest-labs/flux-schnell",
+      n: 1,
+      width,
+      height,
+      response_extension: "webp",
+      num_inference_steps: 15
+    })
+  });
 
-// Map frontend aspect ratios to model aspect ratios
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Nebius AI API error: ${response.status} ${text}`);
+  }
+
+  const data = await response.json();
+  return data;
+}
+
+// Map frontend aspect ratios to dimensions
 const aspectRatioMap = {
-  '16:9': '16:9',
-  '9:16': '9:16'
+  '16:9': { width: 1280, height: 720 },  // Standard YouTube thumbnail size
+  '9:16': { width: 720, height: 1280 }   // Vertical video thumbnail size
 };
 
 export const TextThumbnailService = {
@@ -35,32 +58,18 @@ export const TextThumbnailService = {
         throw new Error(`Invalid aspect ratio: ${aspectRatio}. Supported ratios are: ${Object.keys(aspectRatioMap).join(', ')}`);
       }
 
-      // Create input for Replicate (using flux-schnell model)
-      const input = {
-        prompt: text,
-        go_fast: true,
-        megapixels: "1",
-        num_outputs: 1,
-        aspect_ratio: aspectRatioMap[aspectRatio],
-        output_format: "webp",
-        output_quality: 80,
-        num_inference_steps: 4
-      };
+      const dimensions = aspectRatioMap[aspectRatio];
+      console.log('Generating with input:', { prompt: text, ...dimensions });
 
-      console.log('Generating with input:', input);
-
-      // Generate image using Replicate
-      const output = await replicate.run(
-        "black-forest-labs/flux-schnell",
-        { input }
-      );
-
-      if (!output || !output[0]) {
+      // Generate image using Nebius AI
+      const result = await generateImageWithNebiusAI(text, dimensions);
+      
+      if (!result || !result.data?.[0]?.url) {
         throw new Error('Failed to generate image');
       }
 
       // Fetch the image data from the URL
-      const imageUrl = output[0];
+      const imageUrl = result.data[0].url;
       const imageResponse = await fetch(imageUrl);
       const imageBuffer = await imageResponse.buffer();
 

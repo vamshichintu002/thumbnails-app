@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
+import React, { useRef, useState } from 'react';
+import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
+import { ChevronDown, X } from 'lucide-react';
 
 interface MyCreationsProps {
   isLoading: boolean;
@@ -17,6 +18,8 @@ interface GenerationItemProps {
   onZoomImage: (image: { url: string; title: string }) => void;
   onDownload: (url: string, filename: string) => void;
 }
+
+type FilterType = 'all' | 'title' | 'image' | 'youtube';
 
 const GenerationItem: React.FC<GenerationItemProps> = ({ generation, onZoomImage, onDownload }) => {
   const ref = useRef(null);
@@ -95,14 +98,101 @@ export const MyCreations: React.FC<MyCreationsProps> = ({
   zoomedImage,
   onCloseZoom,
 }) => {
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedType, setSelectedType] = useState<FilterType>('all');
+
+  const filteredGenerations = generations.filter(generation => {
+    return selectedType === 'all' || (() => {
+      switch (selectedType) {
+        case 'title':
+          return generation.generation_type === 'text_to_thumbnail';
+        case 'image':
+          return generation.generation_type === 'image_to_thumbnail';
+        case 'youtube':
+          return generation.generation_type === 'youtube_to_thumbnail';
+        default:
+          return true;
+      }
+    })();
+  });
+
+  const filterTypes: { label: string; value: FilterType }[] = [
+    { label: 'All', value: 'all' },
+    { label: 'Title', value: 'title' },
+    { label: 'Image', value: 'image' },
+    { label: 'YouTube', value: 'youtube' },
+  ];
+
+  const hasActiveFilters = selectedType !== 'all';
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">My Creations</h2>
         <div className="flex items-center gap-3">
-          <button className="px-4 py-2 rounded-lg border border-white/10 hover:border-[#3749be] transition-colors text-sm">
-            Filter
-          </button>
+          <div className="relative">
+            <button 
+              onClick={() => setShowFilters(!showFilters)}
+              className={cn(
+                "px-4 py-2 rounded-lg border transition-colors text-sm flex items-center gap-2",
+                hasActiveFilters 
+                  ? "border-[#3749be] text-[#3749be]" 
+                  : "border-white/10 text-white hover:border-[#3749be]"
+              )}
+            >
+              Filter
+              <ChevronDown className={cn(
+                "w-4 h-4 transition-transform",
+                showFilters && "transform rotate-180"
+              )} />
+            </button>
+            
+            <AnimatePresence>
+              {showFilters && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute right-0 mt-2 w-64 rounded-xl bg-white/5 backdrop-blur-lg border border-white/10 shadow-xl z-10"
+                >
+                  <div className="p-4 space-y-4">
+                    {/* Generation Type Filter */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-white/80">Generation Type</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {filterTypes.map((type) => (
+                          <button
+                            key={type.value}
+                            onClick={() => setSelectedType(type.value)}
+                            className={cn(
+                              "px-3 py-1.5 rounded-lg text-xs transition-colors",
+                              selectedType === type.value
+                                ? "bg-[#3749be] text-white"
+                                : "bg-white/5 hover:bg-white/10 text-white/80"
+                            )}
+                          >
+                            {type.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Clear Filters */}
+                    {hasActiveFilters && (
+                      <button
+                        onClick={() => setSelectedType('all')}
+                        className="w-full px-3 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-white/80 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <X className="w-3 h-3" />
+                        Clear Filter
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          
           <button 
             onClick={onNewThumbnail}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
@@ -111,24 +201,38 @@ export const MyCreations: React.FC<MyCreationsProps> = ({
           </button>
         </div>
       </div>
+
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
         </div>
-      ) : generations.length === 0 ? (
+      ) : filteredGenerations.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-white/60">No thumbnails generated yet</p>
-          <button
-            onClick={onNewThumbnail}
-            className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-sm"
-          >
-            Generate Your First Thumbnail
-          </button>
+          <p className="text-white/60">
+            {generations.length === 0 
+              ? "No thumbnails generated yet" 
+              : "No thumbnails match the selected filter"}
+          </p>
+          {generations.length === 0 ? (
+            <button
+              onClick={onNewThumbnail}
+              className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-sm"
+            >
+              Generate Your First Thumbnail
+            </button>
+          ) : (
+            <button
+              onClick={() => setSelectedType('all')}
+              className="mt-4 px-4 py-2 border border-white/10 hover:border-[#3749be] rounded-lg transition-colors text-sm"
+            >
+              Clear Filter
+            </button>
+          )}
         </div>
       ) : (
         <>
           <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4">
-            {generations.map((generation) => (
+            {filteredGenerations.map((generation) => (
               <GenerationItem
                 key={generation.id}
                 generation={generation}
