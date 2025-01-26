@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Star, Image } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { createCheckoutSession } from '../services/stripe-service';
+import { useAuth } from '../hooks/useAuth';
 
 interface SubscriptionProps {
   credits: number;
@@ -15,6 +17,7 @@ const plans = [
     price: "15",
     yearlyPrice: "10",
     period: "per month",
+    yearlyPeriod: "per month",
     credits: "250 credits",
     features: [
       "Up to 25 images per month",
@@ -27,7 +30,7 @@ const plans = [
     ],
     description: "Perfect for content creators getting started",
     buttonText: "Get Started",
-    href: "#",
+    priceType: (isYearly) => isYearly ? 'basic-yearly' : 'basic-monthly',
     isPopular: false,
   },
   {
@@ -35,6 +38,7 @@ const plans = [
     price: "25",
     yearlyPrice: "20",
     period: "per month",
+    yearlyPeriod: "per month",
     credits: "500 credits",
     features: [
       "Up to 50 images per month",
@@ -50,7 +54,7 @@ const plans = [
     ],
     description: "Best for professional content creators",
     buttonText: "Get Started",
-    href: "#",
+    priceType: (isYearly) => isYearly ? 'pro-yearly' : 'pro-monthly',
     isPopular: true,
   },
   {
@@ -58,17 +62,17 @@ const plans = [
     price: "10",
     yearlyPrice: "10",
     period: "one-time",
+    yearlyPeriod: "one-time",
     credits: "250 credits",
     features: [
       "Purchase only credits after exhausting monthly credits",
       "10$ = 250 credits",
-      "20$ = 500 credits",
       "Use anytime",
       "Never expires",
     ],
     description: "Additional credits when you need them",
     buttonText: "Buy Credits",
-    href: "#",
+    priceType: () => 'credit-pack',
     isPopular: false,
   },
 ];
@@ -79,6 +83,30 @@ export const Subscription: React.FC<SubscriptionProps> = ({
   onUpgrade,
 }) => {
   const [isYearly, setIsYearly] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+
+  const handleCheckout = async (plan: typeof plans[0]) => {
+    if (!user?.id) {
+      console.error('User not authenticated');
+      // You might want to redirect to login or show a message
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const priceType = plan.priceType(isYearly);
+      const { url } = await createCheckoutSession(priceType, user.id);
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error) {
+      console.error('Failed to create checkout session:', error);
+      // You might want to show an error message to the user
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -175,7 +203,7 @@ export const Subscription: React.FC<SubscriptionProps> = ({
                 <span className="text-4xl font-bold">
                   ${isYearly ? plan.yearlyPrice : plan.price}
                 </span>
-                <span className="text-muted-foreground">/{plan.period}</span>
+                <span className="text-muted-foreground">/{isYearly ? plan.yearlyPeriod : plan.period}</span>
               </div>
               <p className="text-sm text-muted-foreground mt-2">
                 {plan.credits}
@@ -197,16 +225,18 @@ export const Subscription: React.FC<SubscriptionProps> = ({
             </ul>
 
             <button
-              onClick={onUpgrade}
+              onClick={() => handleCheckout(plan)}
+              disabled={isLoading}
               className={cn(
                 "w-full py-3 px-4 rounded-xl font-medium transition-all",
                 "border border-white/10 hover:border-blue-500/50",
                 "bg-gradient-to-r from-blue-600/10 to-blue-400/10",
                 "hover:from-blue-600 hover:to-blue-400 hover:text-white",
-                plan.isPopular ? "from-blue-600 to-blue-400 text-white" : "text-muted-foreground"
+                plan.isPopular ? "from-blue-600 to-blue-400 text-white" : "text-muted-foreground",
+                isLoading && "opacity-50 cursor-not-allowed"
               )}
             >
-              {plan.buttonText}
+              {isLoading ? "Loading..." : plan.buttonText}
             </button>
           </motion.div>
         ))}

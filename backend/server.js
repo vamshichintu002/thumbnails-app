@@ -6,6 +6,7 @@ import { AuthService } from './services/auth.js';
 import { TextThumbnailService } from './services/text-thumbnail.js';
 import { ImageThumbnailService } from './services/image-thumbnail.js';
 import { YoutubeThumbnailService } from './services/youtube-thumbnail.js';
+import stripeRoutes from './routes/stripe-routes.js';
 
 dotenv.config();
 
@@ -16,11 +17,18 @@ app.use(cors({
   origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'stripe-signature']
 }));
 
+// Raw body parser for Stripe webhooks
+app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
+
+// JSON parser for all other routes
 app.use(express.json());
 app.use('/public', express.static('public'));
+
+// Stripe routes
+app.use('/api/stripe', stripeRoutes);
 
 // Initialize database
 (async () => {

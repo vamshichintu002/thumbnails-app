@@ -56,7 +56,6 @@ const plans = [
     features: [
       "Purchase only credits after exhausting monthly credits",
       "10$ = 250 credits",
-      "20$ = 500 credits",
       "Use anytime",
       "Never expires",
     ],
