@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Star, Image } from 'lucide-react';
+import { Check, Star, Image, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { createCheckoutSession } from '../services/stripe-service';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import { formatDate } from '../utils/date-utils';
+import { Button } from '../components/ui/button';
 
 interface SubscriptionProps {
   onUpgrade: () => void;
@@ -13,13 +14,14 @@ interface SubscriptionProps {
 
 interface Plan {
   name: string;
-  price: string;
-  yearlyPrice: string;
+  description: string;
+  price?: string;
+  yearlyPrice?: string;
+  monthlyPrice?: string;
   period: string;
   yearlyPeriod: string;
   credits: string;
   features: string[];
-  description: string;
   buttonText: string;
   priceType: (isYearly: boolean) => string;
   isPopular: boolean;
@@ -324,6 +326,37 @@ export const Subscription: React.FC<SubscriptionProps> = ({
           subscriptionData={subscriptionData} 
           onPurchaseCredits={handleCheckout}
         />
+        
+        {/* Credit Pack Purchase Option */}
+        <div className="mt-8 p-6 border rounded-lg bg-card">
+          <h3 className="text-xl font-semibold mb-4">Need More Credits?</h3>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-lg font-medium">Credit Pack</p>
+              <p className="text-muted-foreground">Get 250 additional credits</p>
+              <p className="text-2xl font-bold mt-2">$10.00</p>
+            </div>
+            <Button
+              onClick={() => handleCheckout({ 
+                name: 'Credit Pack',
+                description: '250 additional credits',
+                priceType: (isYearly: boolean) => 'credit-pack',
+                monthlyPrice: '10.00',
+                yearlyPrice: '10.00',
+                credits: '250',
+                features: ['One-time purchase', 'Added to your current balance', 'Never expires'],
+                isPopular: false,
+                period: 'one-time',
+                yearlyPeriod: 'one-time',
+                buttonText: 'Buy Credits'
+              })}
+              disabled={isLoading}
+              className="min-w-[120px]"
+            >
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Buy Credits'}
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
