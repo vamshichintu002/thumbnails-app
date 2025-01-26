@@ -87,8 +87,8 @@ export const Subscription: React.FC<SubscriptionProps> = ({
   const { user } = useAuth();
 
   const handleCheckout = async (plan: typeof plans[0]) => {
-    if (!user?.id) {
-      console.error('User not authenticated');
+    if (!user?.id || !user?.email) {
+      console.error('User not authenticated or missing email');
       // You might want to redirect to login or show a message
       return;
     }
@@ -96,7 +96,7 @@ export const Subscription: React.FC<SubscriptionProps> = ({
     try {
       setIsLoading(true);
       const priceType = plan.priceType(isYearly);
-      const { url } = await createCheckoutSession(priceType, user.id);
+      const { url } = await createCheckoutSession(priceType, user.id, user.email);
       if (url) {
         window.location.href = url;
       }

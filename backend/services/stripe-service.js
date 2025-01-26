@@ -41,9 +41,9 @@ const PRICE_IDS = {
   }
 };
 
-export const createCheckoutSession = async (priceType, userId) => {
+export const createCheckoutSession = async (priceType, userId, userEmail) => {
   try {
-    console.log('Starting checkout session creation with:', { priceType, userId });
+    console.log('Starting checkout session creation with:', { priceType, userId, userEmail });
     
     if (!PRICE_IDS[priceType]) {
       console.error('Invalid price type:', priceType);
@@ -77,6 +77,7 @@ export const createCheckoutSession = async (priceType, userId) => {
       success_url: `${frontendUrl}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${frontendUrl}/dashboard`,
       client_reference_id: userId,
+      customer_email: userEmail,
       metadata: {
         credits: PRICE_IDS[priceType].credits,
         userId: userId,
@@ -99,8 +100,7 @@ export const createCheckoutSession = async (priceType, userId) => {
         }
       : {
           ...baseSessionConfig,
-          mode: 'payment',
-          customer_creation: 'always'
+          mode: 'payment'
         };
 
     console.log('Creating session with config:', JSON.stringify(sessionConfig, null, 2));

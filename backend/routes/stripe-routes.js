@@ -11,23 +11,29 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 // Create a checkout session
 router.post('/create-checkout-session', async (req, res) => {
   try {
-    const { priceType, userId } = req.body;
+    const { priceType, userId, userEmail } = req.body;
     
-    if (!priceType || !userId) {
-      return res.status(400).json({ error: 'Missing required parameters' });
+    if (!priceType || !userId || !userEmail) {
+      return res.status(400).json({ 
+        error: 'Missing required parameters',
+        received: { priceType, userId, userEmail }
+      });
     }
 
-    console.log('Creating checkout session for:', { priceType, userId });
-    const session = await createCheckoutSession(priceType, userId);
+    console.log('Creating checkout session for:', { priceType, userId, userEmail });
+    const session = await createCheckoutSession(priceType, userId, userEmail);
     console.log('Session created:', session.id);
     res.json({ sessionId: session.id, url: session.url });
   } catch (error) {
-    console.error('Checkout session error:', error);
+    console.error('Error in create-checkout-session route:', error);
     // Send more detailed error message in development
     const errorMessage = process.env.NODE_ENV === 'development' 
       ? error.message 
       : 'Failed to create checkout session';
-    res.status(500).json({ error: errorMessage });
+    res.status(500).json({ 
+      error: errorMessage,
+      details: error.message 
+    });
   }
 });
 
