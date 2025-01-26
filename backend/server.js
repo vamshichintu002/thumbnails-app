@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import * as dotenv from 'dotenv';
+import dotenv from 'dotenv';
+import Stripe from 'stripe';
 import { DatabaseService } from './services/database.js';
 import { AuthService } from './services/auth.js';
 import { TextThumbnailService } from './services/text-thumbnail.js';
@@ -13,6 +14,7 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3001;
 
+// CORS configuration
 app.use(cors({
   origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -20,26 +22,15 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'stripe-signature']
 }));
 
-// Raw body parser for Stripe webhooks
+// Handle raw body for webhooks, JSON for other routes
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
+app.use(express.json()); // For all other routes
 
-// JSON parser for all other routes
-app.use(express.json());
+// Static files
 app.use('/public', express.static('public'));
 
-// Stripe routes
+// Mount the stripe routes
 app.use('/api/stripe', stripeRoutes);
-
-// Initialize database
-(async () => {
-  try {
-    console.log('Initializing database...');
-    await DatabaseService.initializeGenerationTypes();
-    console.log('Database initialization complete');
-  } catch (error) {
-    console.error('Error initializing database:', error);
-  }
-})();
 
 // Thumbnail generation endpoints
 app.post('/api/generate-thumbnail', async (req, res) => {
@@ -163,7 +154,7 @@ app.post('/api/auth/sync-profile', async (req, res) => {
     const token = authHeader.split(' ')[1];
     
     // Verify the token
-    const { data: { user }, error: verifyError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: verifyError } = await AuthService.verifySession(token);
     if (verifyError || !user) {
       console.error('Token verification failed:', verifyError);
       return res.status(401).json({ error: 'Invalid token' });
@@ -179,6 +170,17 @@ app.post('/api/auth/sync-profile', async (req, res) => {
   }
 });
 
+// Initialize database
+(async () => {
+  try {
+    console.log('Initializing database...');
+    await DatabaseService.initializeGenerationTypes();
+    console.log('Database initialization complete');
+  } catch (error) {
+    console.error('Error initializing database:', error);
+  }
+})();
+
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+  console.log(`Server is running on port ${port}`);
 });
