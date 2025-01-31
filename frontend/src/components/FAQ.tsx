@@ -5,8 +5,8 @@ import { cn } from '../lib/utils';
 
 const faqs = [
   {
-    question: "How does ThumbAI generate thumbnails?",
-    answer: "ThumbAI uses advanced AI algorithms to analyze your video title, content, and style preferences to generate eye-catching thumbnails. Our system understands context and creates visually appealing designs that match your content's theme."
+    question: "How does Thumbnails Labs generate thumbnails?",
+    answer: "Thumbnails Labs uses advanced AI algorithms to analyze your video title, content, and style preferences to generate eye-catching thumbnails. Our system understands context and creates visually appealing designs that match your content's theme."
   },
   {
     question: "Can I customize the generated thumbnails?",
@@ -41,7 +41,7 @@ export function FAQ() {
             Frequently Asked Questions
           </h2>
           <p className="text-lg text-muted-foreground">
-            Everything you need to know about ThumbAI
+            Everything you need to know about Thumbnails Labs
           </p>
         </div>
 

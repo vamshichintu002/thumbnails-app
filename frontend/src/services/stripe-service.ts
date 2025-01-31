@@ -17,7 +17,7 @@ interface CheckoutResponse {
 
 type PriceType = 'basic-monthly' | 'pro-monthly' | 'basic-yearly' | 'pro-yearly' | 'credit-pack';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL;
 
 export const createCheckoutSession = async (
   priceType: string,

@@ -2,8 +2,11 @@ import React from 'react';
 import { ThreeDPhotoCarousel } from './ui/3d-carousel';
 import Squares from './Squares';
 import { Play, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export function Hero() {
+  const navigate = useNavigate();
+
   return (
     <section className="relative min-h-[calc(100vh-4rem)]">
       {/* Animated Squares Background */}
@@ -39,19 +42,25 @@ export function Hero() {
               </h1>
               
               <p className="text-lg text-gray-400 mb-8 max-w-lg">
-                Ideate & package your videos faster & cheaper.
+                Ideate & package your videos faster & cheaper. Start with 50 free credits, no credit card required.
               </p>
               
-              <div className="flex flex-wrap gap-4 mb-8 lg:mb-12">
-                <button className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-full font-semibold flex items-center gap-2 transition-all shadow-lg hover:shadow-blue-500/25">
+              <div className="flex flex-wrap gap-3 mb-8 lg:mb-12 lg:gap-4">
+                <button 
+                  onClick={() => navigate('/login')}
+                  className="px-4 py-2 lg:px-6 lg:py-3 text-sm lg:text-base bg-blue-600 hover:bg-blue-700 rounded-full font-semibold flex items-center gap-2 transition-all shadow-lg hover:shadow-blue-500/25"
+                >
                   Try for Free
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                 </button>
                 
-                <button className="px-6 py-3 bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-full font-semibold border border-white/10 flex items-center gap-2 transition-all">
-                  <Play className="w-4 h-4" />
+                <button 
+                  onClick={() => navigate('/login')}
+                  className="px-4 py-2 lg:px-6 lg:py-3 text-sm lg:text-base bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-full font-semibold border border-white/10 flex items-center gap-2 transition-all"
+                >
+                  <Play className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                   Watch Demo
-                  <span className="text-sm text-gray-400">68 sec</span>
+                  <span className="text-xs lg:text-sm text-gray-400">68 sec</span>
                 </button>
               </div>
               

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Star, Image } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 const plans = [
   {
@@ -68,16 +69,21 @@ const plans = [
 
 export function Pricing() {
   const [isYearly, setIsYearly] = useState(true);
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    navigate('/login');
+  };
 
   return (
-    <section className="py-24 relative">
+    <section id="pricing" className="py-24 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-4 mb-12">
           <h2 className="text-4xl font-bold tracking-tight sm:text-5xl bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
             Simple, Transparent Pricing
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Choose the plan that works best for you. All plans include access to our AI engine and dedicated support.
+            Start with 50 free credits. Choose the plan that works best for you. All plans include access to our AI engine and dedicated support.
           </p>
         </div>
 
@@ -94,11 +100,14 @@ export function Pricing() {
                 <Image className="w-6 h-6 text-blue-400" />
               </div>
               <div className="text-left">
-                <h3 className="text-xl font-semibold mb-2">Try ThumbAI for Free</h3>
-                <p className="text-muted-foreground">Get 5 free AI-generated thumbnails. No credit card required.</p>
+                <h3 className="text-xl font-semibold mb-2">Try Thumbnails Labs for Free</h3>
+                <p className="text-muted-foreground">Get started with 50 free credits. No credit card required.</p>
               </div>
             </div>
-            <button className="w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors">
+            <button 
+              onClick={handleGetStarted}
+              className="w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
+            >
               Start Free Trial
             </button>
           </div>
@@ -192,6 +201,7 @@ export function Pricing() {
               </ul>
 
               <button
+                onClick={handleGetStarted}
                 className={cn(
                   "w-full py-3 px-4 rounded-xl font-medium transition-all",
                   "border border-white/10 hover:border-blue-500/50",

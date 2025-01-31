@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
+import { toast } from 'react-hot-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -65,21 +66,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      setError(null);
       setLoading(true);
-
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo: 'https://frontend-9qyo1pkhi-princechintu70-yahoocoms-projects.vercel.app/dashboard'
         }
       });
-
       if (error) throw error;
     } catch (error) {
       console.error('Error signing in with Google:', error);
-      setError(error instanceof Error ? error.message : 'Sign in failed');
-      throw error;
+      toast.error('Failed to sign in with Google');
     } finally {
       setLoading(false);
     }

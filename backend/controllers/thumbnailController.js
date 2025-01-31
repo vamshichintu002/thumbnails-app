@@ -3,7 +3,7 @@ import Replicate from 'replicate';
 import { downloadImage } from '../utils/imageUtils.js';
 
 const replicate = new Replicate({
-  auth: process.env.VITE_REPLICATE_API_TOKEN,
+  auth: process.env.REPLICATE_API_TOKEN,
 });
 
 export const generateThumbnail = async (req, res) => {

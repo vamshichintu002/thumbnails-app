@@ -35,7 +35,7 @@ export default function Login() {
             Welcome Back
           </h2>
           <p className="mt-2 text-center text-sm text-white/60">
-            Sign in to continue to ThumbAI
+            Sign in to continue to Thumbnails Labs
           </p>
         </div>
 

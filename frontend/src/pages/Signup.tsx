@@ -36,7 +36,7 @@ export default function Signup() {
             Create Account
           </h2>
           <p className="mt-2 text-center text-sm text-white/60">
-            Join ThumbAI and start creating
+            Join Thumbnails Labs and start creating
           </p>
         </div>
 

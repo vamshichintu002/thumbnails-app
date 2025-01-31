@@ -8,7 +8,7 @@ const testimonials1 = [
       handle: "@alexcreates",
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
     },
-    text: "ThumbAI has completely transformed my YouTube workflow. I used to spend hours creating thumbnails, now it takes seconds!",
+    text: "Thumbnails Labs has completely transformed my YouTube workflow. I used to spend hours creating thumbnails, now it takes seconds!",
     href: "#"
   },
   {
@@ -26,7 +26,7 @@ const testimonials1 = [
       handle: "@marcustech",
       avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face"
     },
-    text: "As a tech reviewer, having consistent, professional thumbnails is crucial. ThumbAI delivers exactly what I need.",
+    text: "As a tech reviewer, having consistent, professional thumbnails is crucial. Thumbnails Labs delivers exactly what I need.",
   },
   {
     author: {
@@ -121,14 +121,14 @@ function CenterExpandingTestimonials({ testimonials }: { testimonials: typeof te
 
 export function Testimonials() {
   return (
-    <section className="bg-background text-foreground py-24 relative">
+    <section id="reviews" className="bg-background text-foreground py-24 relative">
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 text-center sm:gap-16 px-4">
         <div className="flex flex-col items-center gap-4 sm:gap-8">
           <h2 className="max-w-[720px] text-3xl font-bold leading-tight sm:text-5xl sm:leading-tight bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
             Don't Just Take Our Word for It—See What Our Users Have to Say!
           </h2>
           <p className="text-md max-w-[600px] text-muted-foreground sm:text-xl">
-            Join thousands of content creators who are already using ThumbAI to create stunning thumbnails
+            Join thousands of content creators who are already using Thumbnails Labs to create stunning thumbnails
           </p>
         </div>
 

@@ -30,3 +30,9 @@ yarn-error.log*
 # OS files
 .DS_Store
 Thumbs.db
+
+# Generated and temporary files
+/public/generated-images
+/backend/temp
+
+.vercel

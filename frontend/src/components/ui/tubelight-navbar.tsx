@@ -21,14 +21,95 @@ export function NavBar({ items, className, logo, actions }: NavBarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
-  // Handle scroll effect
+  // Handle navigation
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, item: NavItem) => {
+    // If it's a hash link (starts with #), handle smooth scrolling
+    if (item.url.startsWith('#')) {
+      e.preventDefault();
+      setActiveTab(item.name);
+      
+      const targetId = item.url.replace('#', '');
+      const element = document.getElementById(targetId);
+      
+      if (element) {
+        // Close mobile menu first if open
+        if (isMenuOpen) {
+          setIsMenuOpen(false);
+        }
+
+        // Add a small delay to ensure any layout shifts from menu closing are complete
+        setTimeout(() => {
+          const navbarHeight = 80; // Height of the fixed navbar
+          const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+          const offsetPosition = elementPosition - navbarHeight;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }, 50);
+      }
+    } else {
+      // For regular navigation (like /dashboard), just update the active tab
+      setActiveTab(item.name);
+      if (isMenuOpen) {
+        setIsMenuOpen(false);
+      }
+      // Let the default navigation happen
+    }
+  };
+
+  // Handle scroll effect with debouncing
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+      // Update navbar background
+      setScrolled(window.scrollY > 20);
+
+      // Update active section based on scroll position
+      const sections = items
+        .map(item => ({ 
+          id: item.url.replace('#', ''),
+          name: item.name,
+          element: document.getElementById(item.url.replace('#', ''))
+        }))
+        .filter(item => item.element); // Only consider elements that exist
+
+      if (sections.length === 0) return;
+
+      const scrollPosition = window.scrollY + 100;
+      
+      // Find the current section
+      for (const section of sections) {
+        const element = section.element;
+        if (!element) continue;
+
+        const rect = element.getBoundingClientRect();
+        const offsetTop = rect.top + window.pageYOffset;
+        const offsetBottom = offsetTop + rect.height;
+
+        if (scrollPosition >= offsetTop && scrollPosition < offsetBottom) {
+          setActiveTab(section.name);
+          break;
+        }
+      }
+    };
+
+    // Debounce scroll handler
+    let timeoutId: NodeJS.Timeout;
+    const debouncedHandleScroll = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleScroll, 100);
+    };
+
+    window.addEventListener('scroll', debouncedHandleScroll);
+    // Run once on mount to set initial active state
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', debouncedHandleScroll);
+      clearTimeout(timeoutId);
+    };
+  }, [items]);
 
   // Close menu on resize if mobile menu is open
   useEffect(() => {
@@ -65,7 +146,7 @@ export function NavBar({ items, className, logo, actions }: NavBarProps) {
                   <a
                     key={item.name}
                     href={item.url}
-                    onClick={() => setActiveTab(item.name)}
+                    onClick={(e) => handleNavClick(e, item)}
                     className={cn(
                       "relative cursor-pointer text-sm font-semibold px-6 py-2.5 rounded-full transition-all",
                       "text-white/80 hover:text-blue-400",
@@ -151,10 +232,7 @@ export function NavBar({ items, className, logo, actions }: NavBarProps) {
                   <a
                     key={item.name}
                     href={item.url}
-                    onClick={() => {
-                      setActiveTab(item.name)
-                      setIsMenuOpen(false)
-                    }}
+                    onClick={(e) => handleNavClick(e, item)}
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
                       "text-white/80 hover:text-blue-400",

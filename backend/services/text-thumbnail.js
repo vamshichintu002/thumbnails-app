@@ -3,33 +3,89 @@ import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 
 dotenv.config();
+async function enhancePromptWithGroq(userText) {
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile', 
+        messages: [
+          {
+              role: 'system',
+              content: 'You are a thumbnail generation expert. You need to generate a prompt for a YouTube thumbnail.'
+          },
+          {
+              role: 'user',
+              content: `Generate a YouTube thumbnail description for the title: "${userText}". Key elements: 
+              1. **Title**: Prominently feature in bold, large white text at the top. 
+              2. **Central Figure**: Show a confident figure engaging with relevant objects or tech. 
+              3. **Background**: Use a vibrant gradient with tech patterns and subtle glowing effects. 
+              4. **Accents**: Add optional emojis or icons to enhance energy. 
+              5. **Layout**: Ensure a clean, balanced design focused on readability.`
+          }
+      ],
+      
+        temperature: 1,
+        max_tokens: 1024,
+        top_p: 1,
+        stream: false
+      })
+    });
 
-// Direct API call to Nebius AI
-async function generateImageWithNebiusAI(prompt, { width, height }) {
-  const response = await fetch('https://api.studio.nebius.ai/v1/images/generations', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.NEBIUS_API_KEY}`
-    },
-    body: JSON.stringify({
-      prompt,
-      model: "black-forest-labs/flux-schnell",
-      n: 1,
-      width,
-      height,
-      response_extension: "webp",
-      num_inference_steps: 15
-    })
-  });
+    if (!response.ok) {
+      throw new Error(`Groq API error: ${response.statusText}`);
+    }
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Nebius AI API error: ${response.status} ${text}`);
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Error enhancing prompt with Groq:', error);
+    throw error;
   }
+}
 
-  const data = await response.json();
-  return data;
+async function generateImageWithNebiusAI(prompt, { width, height }, referenceImage = null) {
+  try {
+    // Ensure prompt doesn't exceed length limit
+    if (prompt.length > 2000) {
+      prompt = prompt.substring(0, 1997) + "...";
+    }
+    
+    console.log('Generating image with Nebius AI:', { prompt, width, height });
+    const response = await fetch('https://api.studio.nebius.ai/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.NEBIUS_API_KEY}`
+      },
+      body: JSON.stringify({
+        prompt,
+        model: "black-forest-labs/flux-dev",
+        n: 1,
+        width,
+        height,
+        response_extension: "webp",
+        num_inference_steps: 15,
+        image: referenceImage
+      })
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Nebius AI API error: ${response.status} ${text}`);
+    }
+
+    const data = await response.json();
+    console.log('Successfully generated image with Nebius AI');
+    return data;
+  } catch (error) {
+    console.error('Error generating image with Nebius AI:', error);
+    throw error;
+  }
 }
 
 // Map frontend aspect ratios to dimensions
@@ -61,8 +117,11 @@ export const TextThumbnailService = {
       const dimensions = aspectRatioMap[aspectRatio];
       console.log('Generating with input:', { prompt: text, ...dimensions });
 
+      // Enhance prompt using Groq
+      const enhancedPrompt = await enhancePromptWithGroq(text);
+
       // Generate image using Nebius AI
-      const result = await generateImageWithNebiusAI(text, dimensions);
+      const result = await generateImageWithNebiusAI(enhancedPrompt, dimensions);
       
       if (!result || !result.data?.[0]?.url) {
         throw new Error('Failed to generate image');

@@ -16,18 +16,35 @@ const port = process.env.PORT || 3001;
 
 // CORS configuration
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: function(origin, callback) {
+    const allowedOrigins = [
+      'https://www.thumbnailslabs.com',
+      'https://thumbnailslabs.com',
+      'https://frontend-f1bzzsf0m-princechintu70-yahoocoms-projects.vercel.app',
+      'https://frontend-kohl-phi.vercel.app'
+    ];
+    
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'stripe-signature', 'X-Requested-With'],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'stripe-signature']
+  optionsSuccessStatus: 204
 }));
+
+// Handle preflight requests
+app.options('*', cors());
 
 // Handle raw body for webhooks, JSON for other routes
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json()); // For all other routes
-
-// Static files
-app.use('/public', express.static('public'));
 
 // Mount the stripe routes
 app.use('/api/stripe', stripeRoutes);
@@ -170,6 +187,29 @@ app.post('/api/auth/sync-profile', async (req, res) => {
   }
 });
 
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Global error handler caught:', err);
+  console.error('Stack trace:', err.stack);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: err.message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
+
+// Unhandled rejection handler
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise);
+  console.error('Reason:', reason);
+});
+
+// Uncaught exception handler
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  console.error('Stack:', error.stack);
+});
+
 // Initialize database
 (async () => {
   try {
@@ -181,6 +221,13 @@ app.post('/api/auth/sync-profile', async (req, res) => {
   }
 })();
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+// Start server
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(port, () => {
+    console.log(`Server environment: ${process.env.NODE_ENV}`);
+    console.log(`CORS origin: ${process.env.FRONTEND_URL}`);
+    console.log(`Server running on port ${port}`);
+  });
+}
+
+export default app;

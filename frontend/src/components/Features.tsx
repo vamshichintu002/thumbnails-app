@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Users, Wand2, Zap, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface FeatureProps {
   icon: React.ReactNode;
@@ -12,6 +13,7 @@ interface FeatureProps {
   badgeColor: string;
   badgeText: string;
   imageOrder?: string;
+  gifSrc: string;
 }
 
 function Feature({
@@ -23,8 +25,11 @@ function Feature({
   gradientTo,
   badgeColor,
   badgeText,
-  imageOrder = ''
+  imageOrder = '',
+  gifSrc
 }: FeatureProps) {
+  const navigate = useNavigate();
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -43,19 +48,22 @@ function Feature({
         <p className="text-lg text-gray-400 mb-6">
           {description}
         </p>
-        <button className={`px-6 py-3 ${buttonColor} rounded-full font-semibold flex items-center gap-2 transition-all shadow-lg hover:shadow-${gradientFrom}/25`}>
+        <button 
+          onClick={() => navigate('/login')}
+          className={`px-6 py-3 ${buttonColor} rounded-full font-semibold flex items-center gap-2 transition-all shadow-lg hover:shadow-${gradientFrom}/25`}
+        >
           Get Started
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
       <div className={`relative group ${imageOrder.includes('order-2') ? 'order-1' : ''}`}>
         <div className={`absolute -inset-1 bg-gradient-to-r from-${gradientFrom} to-${gradientTo} rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200`}></div>
-        <div className="relative rounded-[2rem] overflow-hidden bg-background/80 ring-1 ring-white/10 backdrop-blur-3xl">
+        <div className="relative rounded-[2rem] overflow-hidden bg-background/80 ring-1 ring-white/10 backdrop-blur-3xl min-h-[200px] max-h-[400px] flex items-center justify-center">
           <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent z-10" />
           <img 
-            src="https://i.imgur.com/ltVG405.gif" 
+            src={gifSrc} 
             alt={`${title} Demo`}
-            className="w-full h-[400px] object-cover"
+            className="max-w-full max-h-[400px] w-auto h-auto object-contain p-4"
           />
         </div>
       </div>
@@ -65,7 +73,7 @@ function Feature({
 
 export function Features() {
   return (
-    <section className="relative py-24">
+    <section id="features" className="relative py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Feature
           icon={<Wand2 className="w-4 h-4" />}
@@ -76,6 +84,7 @@ export function Features() {
           gradientTo="blue-600"
           badgeColor="bg-purple-500/10 text-purple-400"
           badgeText="Smart Title Analysis"
+          gifSrc="/gifs/gif1.gif"
         />
 
         <Feature
@@ -88,6 +97,7 @@ export function Features() {
           badgeColor="bg-blue-500/10 text-blue-400"
           badgeText="AI Face Generation"
           imageOrder="order-1 lg:order-2"
+          gifSrc="/gifs/gif3.gif"
         />
 
         <Feature
@@ -99,6 +109,7 @@ export function Features() {
           gradientTo="emerald-600"
           badgeColor="bg-green-500/10 text-green-400"
           badgeText="Instant Enhancement"
+          gifSrc="/gifs/gif2.gif"
         />
       </div>
     </section>

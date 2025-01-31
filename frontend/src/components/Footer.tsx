@@ -55,10 +55,10 @@ export function Footer() {
           <div>
             <h3 className="mb-4 text-lg font-semibold">Contact Us</h3>
             <address className="space-y-2 text-sm not-italic text-muted-foreground">
-              <p>ThumbAI Headquarters</p>
+              <p>Thumbnails Labs Headquarters</p>
               <p>123 Creator Street</p>
               <p>Content City, CC 12345</p>
-              <p>Email: support@thumbai.com</p>
+              <p>Email: support@thumbnailslabs.com</p>
             </address>
           </div>
 
@@ -87,7 +87,7 @@ export function Footer() {
         {/* Bottom Section */}
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-center md:flex-row">
           <p className="text-sm text-muted-foreground">
-            © 2024 ThumbAI. All rights reserved.
+            &copy; 2024 Thumbnails Labs. All rights reserved.
           </p>
           <nav className="flex gap-4 text-sm">
             <a href="#privacy" className="transition-colors hover:text-blue-400">

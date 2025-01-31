@@ -15,6 +15,7 @@ import {
   LogOut,
   User,
   Gem,
+  X,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -30,7 +31,10 @@ type MenuSection = 'create' | 'creations' | 'subscription' | 'logout';
 // YouTube URL regex pattern
 const YOUTUBE_URL_PATTERN = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
 
-export function Dashboard() {
+// Add this near the top of the file
+const API_URL = import.meta.env.VITE_API_URL;
+
+export default function Dashboard() {
   const [credits, setCredits] = useState<number | null>(null);
   const [activeSection, setActiveSection] = useState<MenuSection>('create');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -44,7 +48,6 @@ export function Dashboard() {
   const [zoomedImage, setZoomedImage] = useState<{ url: string; title: string } | null>(null);
   const [user, setUser] = useState<any>(null);
   const [generationOption, setGenerationOption] = useState<'style' | 'recreate'>('style');
-  const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
@@ -54,6 +57,7 @@ export function Dashboard() {
     output_image_url: string;
     created_at: string;
     generation_type: string;
+    metadata: any;
   }>>([]);
   const [allGenerations, setAllGenerations] = useState<any[]>([]);
   const [isLoadingGenerations, setIsLoadingGenerations] = useState(false);
@@ -189,7 +193,7 @@ export function Dashboard() {
       const { data, error } = await supabase
         .from('generations')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('profile_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -371,9 +375,16 @@ export function Dashboard() {
             <div className="space-y-8">
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-4">
-                  <img src="/logo.png" alt="ThumbAI Logo" className="h-12 w-auto" />
-               
+                  <img src="/logo.png" alt="Thumbnails Labs Logo" className="h-12 w-auto" />
                 </div>
+                <a 
+                  href="https://thumbnailslabs.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-blue-400 hover:text-blue-500 transition-colors text-sm font-medium"
+                >
+                  thumbnailslabs.com
+                </a>
                 <p className="text-white/60">
                   Create stunning thumbnails for your content using AI.
                 </p>
@@ -431,6 +442,7 @@ export function Dashboard() {
                       className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                     />
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-white/80 mb-2">Reference Image (Optional)</label>
                     
@@ -752,7 +764,8 @@ export function Dashboard() {
                <button 
                 onClick={handleGenerate}
                 disabled={isGenerating || !user}
-                className="relative w-full inline-flex h-12 overflow-hidden rounded-full p-[2px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-50 mb-8 disabled:opacity-50 disabled:cursor-not-allowed">
+                className="relative w-full inline-flex h-12 overflow-hidden rounded-full p-[2px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-50 mb-18 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#a2aeff_0%,#3749be_50%,#a2aeff_100%)] dark:bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
                 <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full dark:bg-[#070e41] bg-[#ffffff] px-8 py-1 text-sm font-medium dark:text-gray-50 text-black backdrop-blur-3xl">
                   <Zap className="w-5 h-5 mr-2" />
@@ -861,8 +874,8 @@ export function Dashboard() {
                           xmlns="http://www.w3.org/2000/svg" 
                           className="h-6 w-6" 
                           fill="none" 
-                          viewBox="0 0 24 24" 
                           stroke="currentColor"
+                          viewBox="0 0 24 24"
                         >
                           <path 
                             strokeLinecap="round" 
@@ -938,91 +951,110 @@ export function Dashboard() {
 
   const handleGenerate = async () => {
     if (!user) {
-      toast.error('Please sign in to generate thumbnails');
+      setError('Please log in to generate thumbnails');
       return;
-    }
-
-    if (!selectedRatio) {
-      toast.error('Please select an aspect ratio');
-      return;
-    }
-
-    let requestData: any = {
-      userId: user.id,
-      aspectRatio: selectedRatio
-    };
-
-    // Validate and prepare data based on generation type
-    switch (generationType) {
-      case 'image':
-        if (!imageText) {
-          toast.error('Please provide an image description');
-          return;
-        }
-        requestData = {
-          ...requestData,
-          generationType: 'image_to_thumbnail',
-          prompt: imageText,
-          referenceImageUrl: selectedExistingImage
-        };
-        break;
-
-      case 'title':
-        if (!title) {
-          toast.error('Please enter a title');
-          return;
-        }
-        requestData = {
-          ...requestData,
-          generationType: 'text_to_thumbnail',
-          prompt: title
-        };
-        break;
-
-      case 'youtube':
-        if (!youtubeUrl) {
-          toast.error('Please enter a YouTube URL');
-          return;
-        }
-        if (!title) {
-          toast.error('Please enter a video title');
-          return;
-        }
-        requestData = {
-          ...requestData,
-          generationType: 'youtube_to_thumbnail',
-          youtubeUrl: youtubeUrl,
-          videoTitle: title,
-          generationOption,
-          referenceImageUrl: selectedExistingImage
-        };
-        break;
-
-      default:
-        toast.error('Invalid generation type');
-        return;
     }
 
     setIsGenerating(true);
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/generate-thumbnail', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
-      });
+      let response;
+      const baseUrl = API_URL || 'http://localhost:3000';
+
+      console.log('Starting thumbnail generation...');
+      console.log('Generation type:', generationType);
+
+      switch (generationType) {
+        case 'title':
+          console.log('Text to thumbnail request:', {
+            userId: user.id,
+            generationType: 'text_to_thumbnail',
+            prompt: title,
+            aspectRatio: selectedRatio
+          });
+
+          response = await fetch(`${baseUrl}/api/generate-thumbnail`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: user.id,
+              generationType: 'text_to_thumbnail',
+              prompt: title,
+              aspectRatio: selectedRatio
+            }),
+          });
+          break;
+        case 'image':
+          console.log('Image to thumbnail request:', {
+            userId: user.id,
+            generationType: 'image_to_thumbnail',
+            prompt: imageText,
+            aspectRatio: selectedRatio,
+            referenceImageUrl: selectedExistingImage
+          });
+
+          response = await fetch(`${baseUrl}/api/generate-thumbnail`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: user.id,
+              generationType: 'image_to_thumbnail',
+              prompt: imageText,
+              aspectRatio: selectedRatio,
+              referenceImageUrl: selectedExistingImage
+            }),
+          });
+          break;
+        case 'youtube':
+          console.log('YouTube to thumbnail request:', {
+            userId: user.id,
+            generationType: 'youtube_to_thumbnail',
+            youtubeUrl: youtubeUrl,
+            videoTitle: title,
+            aspectRatio: selectedRatio,
+            generationOption,
+            referenceImageUrl: selectedExistingImage
+          });
+
+          response = await fetch(`${baseUrl}/api/generate-thumbnail`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: user.id,
+              generationType: 'youtube_to_thumbnail',
+              youtubeUrl: youtubeUrl,
+              videoTitle: title,
+              aspectRatio: selectedRatio,
+              generationOption,
+              referenceImageUrl: selectedExistingImage
+            }),
+          });
+          break;
+
+        default:
+          setError('Invalid generation type');
+          return;
+      }
 
       const data = await response.json();
+      console.log('API Response:', data);
 
       if (!response.ok) {
+        console.error('API Error:', data);
         throw new Error(data.error || 'Failed to generate thumbnail');
       }
 
       // Add the new generation to the list
       setUserGenerations(prev => [data, ...prev]);
+      
+      console.log('Generated image URL:', data.output_image_url);
       
       // Set the generated image and show popup
       setGeneratedImages([data.output_image_url]);
@@ -1099,55 +1131,50 @@ export function Dashboard() {
       }
     };
 
-    // Close popup with escape key
-    useEffect(() => {
-      const handleEscKey = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          setShowGeneratedPopup(false);
-        }
-      };
-
-      window.addEventListener('keydown', handleEscKey);
-      return () => window.removeEventListener('keydown', handleEscKey);
-    }, []);
-
+    // Get the latest generation data
+    const latestGeneration = userGenerations[0];
+    const metadata = latestGeneration?.metadata || {};
+    
     return (
       <div 
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-6"
         onClick={handleBackdropClick}
       >
         <div className="relative max-w-4xl w-full bg-gradient-to-b from-[#0f1729] to-[#070e41] rounded-xl overflow-hidden border border-white/10 shadow-2xl max-h-[90vh] flex flex-col">
-          {/* Absolute positioned close button for mobile */}
-          <button
-            onClick={() => setShowGeneratedPopup(false)}
-            className="absolute top-2 right-2 z-10 p-2 text-white/60 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition-all duration-200 md:hidden"
-            aria-label="Close popup"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-
           {/* Header */}
           <div className="p-4 md:p-6 border-b border-white/10">
             <div className="flex items-center justify-between">
               <h3 className="text-xl md:text-2xl font-bold text-white bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
                 Generated Thumbnails
               </h3>
-              {/* Desktop close button */}
               <button
                 onClick={() => setShowGeneratedPopup(false)}
                 className="hidden md:flex text-white/60 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="h-6 w-6" />
               </button>
             </div>
           </div>
           
           {/* Content - Scrollable */}
           <div className="p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto flex-grow">
+            {/* Prompt Information */}
+            {metadata.original_prompt && (
+              <div className="space-y-3 p-4 rounded-lg bg-white/5 border border-white/10">
+                <div>
+                  <h4 className="text-sm font-medium text-white/80">Original Prompt</h4>
+                  <p className="text-sm text-white/60 mt-1">{metadata.original_prompt}</p>
+                </div>
+                {metadata.enhanced_prompt && (
+                  <div>
+                    <h4 className="text-sm font-medium text-white/80">Enhanced Prompt</h4>
+                    <p className="text-sm text-white/60 mt-1">{metadata.enhanced_prompt}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Generated Images */}
             <div className="grid grid-cols-1 gap-4 md:gap-6">
               {generatedImages.map((imageUrl, index) => (
                 <div key={index} className="relative group rounded-xl overflow-hidden bg-gradient-to-r from-blue-500/10 to-purple-500/10 p-1">
