@@ -142,48 +142,25 @@ async function uploadToSupabase(imageUrl, userId) {
   }
 }
 
-// Initialize generation in database and return immediately
-async function initializeGeneration(userId, youtubeUrl, videoTitle, generationOption) {
-  const { data, error } = await supabase
-    .from('thumbnail_generations')
-    .insert([{
-      user_id: userId,
-      youtube_url: youtubeUrl,
-      video_title: videoTitle,
-      generation_option: generationOption,
-      status: 'pending',
-      generation_type: 'youtube_to_thumbnail'
-    }])
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-// Update generation status
-async function updateGenerationStatus(id, status, resultUrl = null, errorMessage = null) {
-  const { error } = await supabase
-    .from('thumbnail_generations')
-    .update({
-      status,
-      result_url: resultUrl,
-      error_message: errorMessage,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', id);
-
-  if (error) throw error;
-}
-
-async function generateThumbnail(userId, youtubeUrl, videoTitle, generationOption, referenceImageUrl = null, aspectRatio = '16:9') {
-  // Initialize generation record
-  const generation = await initializeGeneration(userId, youtubeUrl, videoTitle, generationOption);
-
-  // Start async processing
-  (async () => {
+export const YoutubeThumbnailService = {
+  async generateThumbnail(userId, youtubeUrl, videoTitle, generationOption, aspectRatio = '16:9', referenceImageUrl = null) {
     try {
-      await updateGenerationStatus(generation.id, 'processing');
+      // Validate required fields
+      if (!youtubeUrl || !videoTitle) {
+        throw new Error('YouTube URL and video title are required');
+      }
+
+      // Check if user has enough credits
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('credits')
+        .eq('id', userId)
+        .single();
+
+      if (profileError) throw profileError;
+      if (!profile || profile.credits < 20) {
+        throw new Error('Insufficient credits (20 credits required)');
+      }
 
       // Extract YouTube video ID
       const videoId = youtubeUrl.match(YOUTUBE_URL_PATTERN)?.[1];
@@ -241,21 +218,38 @@ async function generateThumbnail(userId, youtubeUrl, videoTitle, generationOptio
       // Upload generated image to Supabase and get public URL
       const outputImageUrl = await uploadToSupabase(generatedImageUrl, userId);
 
-      // Update status with success
-      await updateGenerationStatus(generation.id, 'completed', outputImageUrl);
+      // Create generation record
+      const { data: generationData, error: generationError } = await supabase
+        .from('generations')
+        .insert({
+          profile_id: userId,
+          generation_type: 'youtube_to_thumbnail',
+          output_image_url: outputImageUrl,
+          credit_cost: 20,
+          metadata: {
+            youtubeUrl,
+            videoTitle,
+            generationOption,
+            aspectRatio
+          }
+        })
+        .select()
+        .single();
+
+      if (generationError) throw generationError;
+
+      // Deduct credits
+      const { error: creditError } = await supabase
+        .from('profiles')
+        .update({ credits: profile.credits - 20 })
+        .eq('id', userId);
+
+      if (creditError) throw creditError;
+
+      return generationData;
     } catch (error) {
-      console.error('Generation error:', error);
-      await updateGenerationStatus(generation.id, 'failed', null, error.message);
+      console.error('Error in generateYoutubeThumbnail:', error);
+      throw error;
     }
-  })().catch(console.error);
-
-  // Return immediately with generation ID
-  return {
-    generationId: generation.id,
-    status: 'pending'
-  };
-}
-
-export const YoutubeThumbnailService = {
-  generateThumbnail
+  }
 };

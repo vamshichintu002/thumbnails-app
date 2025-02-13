@@ -57,13 +57,11 @@ function Feature({
         </button>
       </div>
       <div className={`relative group ${imageOrder.includes('order-2') ? 'order-1' : ''}`}>
-        <div className={`absolute -inset-1 bg-gradient-to-r from-${gradientFrom} to-${gradientTo} rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200`}></div>
-        <div className="relative rounded-[2rem] overflow-hidden bg-background/80 ring-1 ring-white/10 backdrop-blur-3xl min-h-[200px] max-h-[400px] flex items-center justify-center">
-          <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent z-10" />
+        <div className="relative overflow-hidden min-h-[350px] md:min-h-[400px] lg:min-h-[500px] w-full flex items-center justify-center p-4 md:p-6">
           <img 
             src={gifSrc} 
             alt={`${title} Demo`}
-            className="max-w-full max-h-[400px] w-auto h-auto object-contain p-4"
+            className="w-full h-auto max-h-[350px] md:max-h-[450px] object-contain rounded-xl shadow-[0_0_30px_rgba(59,130,246,0.5)] hover:shadow-[0_0_40px_rgba(59,130,246,0.6)] transition-shadow duration-300"
           />
         </div>
       </div>

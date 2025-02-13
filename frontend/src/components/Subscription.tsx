@@ -186,7 +186,7 @@ const SubscriptionStatus: React.FC<{
           </div>
           
           {isLowCredits && (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4">
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 mb-8 md:mb-16">
               <p className="text-red-400 text-sm mb-3">
                 Your credits are running low! Consider purchasing a credit pack to ensure uninterrupted service.
               </p>
@@ -329,32 +329,36 @@ export const Subscription: React.FC<SubscriptionProps> = ({
         
         {/* Credit Pack Purchase Option */}
         <div className="mt-8 p-6 border rounded-lg bg-card">
-          <h3 className="text-xl font-semibold mb-4">Need More Credits?</h3>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-lg font-medium">Credit Pack</p>
-              <p className="text-muted-foreground">Get 250 additional credits</p>
-              <p className="text-2xl font-bold mt-2">$10.00</p>
+          <div className="w-full max-w-sm mx-auto">
+            <div className="mb-16 md:mb-24">
+              <h3 className="text-xl md:text-2xl font-bold mb-4">Need More Credits?</h3>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-lg font-medium">Credit Pack</p>
+                  <p className="text-muted-foreground">Get 250 additional credits</p>
+                  <p className="text-2xl font-bold mt-2">$10.00</p>
+                </div>
+                <Button
+                  onClick={() => handleCheckout({ 
+                    name: 'Credit Pack',
+                    description: '250 additional credits',
+                    priceType: (isYearly: boolean) => 'credit-pack',
+                    monthlyPrice: '10.00',
+                    yearlyPrice: '10.00',
+                    credits: '250',
+                    features: ['One-time purchase', 'Added to your current balance', 'Never expires'],
+                    isPopular: false,
+                    period: 'one-time',
+                    yearlyPeriod: 'one-time',
+                    buttonText: 'Buy Credits'
+                  })}
+                  disabled={isLoading}
+                  className="min-w-[120px]"
+                >
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Buy Credits'}
+                </Button>
+              </div>
             </div>
-            <Button
-              onClick={() => handleCheckout({ 
-                name: 'Credit Pack',
-                description: '250 additional credits',
-                priceType: (isYearly: boolean) => 'credit-pack',
-                monthlyPrice: '10.00',
-                yearlyPrice: '10.00',
-                credits: '250',
-                features: ['One-time purchase', 'Added to your current balance', 'Never expires'],
-                isPopular: false,
-                period: 'one-time',
-                yearlyPeriod: 'one-time',
-                buttonText: 'Buy Credits'
-              })}
-              disabled={isLoading}
-              className="min-w-[120px]"
-            >
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Buy Credits'}
-            </Button>
           </div>
         </div>
       </div>

@@ -43,7 +43,7 @@ export default function Dashboard() {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [youtubePreview, setYoutubePreview] = useState<string | null>(null);
   const [youtubeError, setYoutubeError] = useState<string | null>(null);
-  const [generationType, setGenerationType] = useState<GenerationType>('image');
+  const [generationType, setGenerationType] = useState<GenerationType>('title');
   const [selectedRatio, setSelectedRatio] = useState<AspectRatio>('16:9');
   const [zoomedImage, setZoomedImage] = useState<{ url: string; title: string } | null>(null);
   const [user, setUser] = useState<any>(null);
@@ -308,6 +308,12 @@ export default function Dashboard() {
 
       if (dbError) throw dbError;
 
+      // Update local state with the new image
+      setExistingImages(prevImages => [{
+        id: imageData.id,
+        image_url: publicUrl
+      }, ...prevImages]);
+
       // Show success toast
       toast.success('Image uploaded successfully!', {
         duration: 3000,
@@ -344,8 +350,57 @@ export default function Dashboard() {
     } else {
       // Otherwise, select the new image
       setSelectedExistingImage(imageUrl);
-      setPreviewImage(null);
-      setSelectedFile(null);
+    }
+    // Clear preview and selected file when selecting from existing images
+    setPreviewImage(null);
+    setSelectedFile(null);
+  };
+
+  const handleDeleteImage = async (imageUrl: string, imageId: string) => {
+    try {
+      // Extract the file path from the URL
+      const filePath = imageUrl.split('user_images/')[1];
+      
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('user_images')
+        .remove([filePath]);
+
+      if (storageError) throw storageError;
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('user_images')
+        .delete()
+        .eq('id', imageId);
+
+      if (dbError) throw dbError;
+
+      // Update local state
+      setExistingImages(prevImages => prevImages.filter(img => img.id !== imageId));
+      
+      // Show success message
+      toast.success('Image deleted successfully!', {
+        duration: 3000,
+        position: 'top-center',
+        style: {
+          background: '#070e41',
+          color: '#fff',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+        },
+      });
+
+    } catch (err) {
+      console.error('Delete error:', err);
+      toast.error('Failed to delete image', {
+        duration: 3000,
+        position: 'top-center',
+        style: {
+          background: '#070e41',
+          color: '#fff',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+        },
+      });
     }
   };
 
@@ -385,8 +440,15 @@ export default function Dashboard() {
                 >
                   thumbnailslabs.com
                 </a>
-                <p className="text-white/60">
-                  Create stunning thumbnails for your content using AI.
+                <p className="text-white/80 text-base md:text-lg leading-relaxed max-w-2xl">
+                  Transform your content with our AI-powered thumbnail generator. Choose from three powerful options:
+                  <span className="block mt-3 md:mt-2 flex flex-row items-center justify-start gap-2 flex-wrap text-xs md:text-sm">
+                    <span className="inline-flex items-center text-blue-400 whitespace-nowrap">• Text to Thumbnail</span>
+                    <span className="inline-block mx-1 text-white/40">|</span>
+                    <span className="inline-flex items-center text-purple-400 whitespace-nowrap">• Face to Thumbnail</span>
+                    <span className="inline-block mx-1 text-white/40">|</span>
+                    <span className="inline-flex items-center text-green-400 whitespace-nowrap">• YouTube to Thumbnail</span>
+                  </span>
                 </p>
               </div>
 
@@ -455,7 +517,7 @@ export default function Dashboard() {
                             <div
                               key={img.id}
                               className={cn(
-                                "relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all",
+                                "relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all group",
                                 selectedExistingImage === img.image_url
                                   ? "border-blue-500 ring-2 ring-blue-500"
                                   : "border-transparent hover:border-white/20"
@@ -466,6 +528,7 @@ export default function Dashboard() {
                                 src={img.image_url}
                                 alt="User uploaded"
                                 className="w-full h-full object-cover"
+                                onClick={() => handleExistingImageSelect(img.image_url)}
                               />
                               {selectedExistingImage === img.image_url && (
                                 <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
@@ -486,6 +549,17 @@ export default function Dashboard() {
                                   </div>
                                 </div>
                               )}
+                              {/* Delete Button */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteImage(img.image_url, img.id);
+                                }}
+                                className="absolute top-2 right-2 p-1 rounded-full bg-black/60 text-white/80 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Delete Image"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
                             </div>
                           ))}
                         </div>
@@ -604,7 +678,7 @@ export default function Dashboard() {
                                 <div
                                   key={img.id}
                                   className={cn(
-                                    "relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all",
+                                    "relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all group",
                                     selectedExistingImage === img.image_url
                                       ? "border-blue-500 ring-2 ring-blue-500"
                                       : "border-transparent hover:border-white/20"
@@ -635,6 +709,17 @@ export default function Dashboard() {
                                       </div>
                                     </div>
                                   )}
+                                  {/* Delete Button */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteImage(img.image_url, img.id);
+                                    }}
+                                    className="absolute top-2 right-2 p-1 rounded-full bg-black/60 text-white/80 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                    title="Delete Image"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
                                 </div>
                               ))}
                             </div>
@@ -764,11 +849,11 @@ export default function Dashboard() {
                <button 
                 onClick={handleGenerate}
                 disabled={isGenerating || !user}
-                className="relative w-full inline-flex h-12 overflow-hidden rounded-full p-[2px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-50 mb-18 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative w-full inline-flex h-12 overflow-hidden rounded-full p-[2px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-50 mb-12 md:mb-16 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#a2aeff_0%,#3749be_50%,#a2aeff_100%)] dark:bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
-                <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full dark:bg-[#070e41] bg-[#ffffff] px-8 py-1 text-sm font-medium dark:text-gray-50 text-black backdrop-blur-3xl">
-                  <Zap className="w-5 h-5 mr-2" />
+                <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-[#070e41] px-8 py-1 text-sm font-medium text-white/90 backdrop-blur-3xl">
+                  <Zap className="w-5 h-5 mr-2 text-blue-400" />
                   {isGenerating ? 'Generating...' : 'Generate Thumbnails'}
                 </span>
               </button>
@@ -780,9 +865,9 @@ export default function Dashboard() {
             </div>
 
             {/* Recent Creations */}
-            <div className="mt-12 space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold">Recent Creations</h2>
+            <div className="mt-12 md:mt-16 space-y-4 md:space-y-6 mb-12 md:mb-16">
+              <div className="flex items-center justify-between px-4 md:px-0">
+                <h2 className="text-lg md:text-xl font-bold">Recent Creations</h2>
                 <button 
                   onClick={() => setActiveSection('creations')}
                   className="text-sm text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
@@ -791,7 +876,7 @@ export default function Dashboard() {
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 px-4 md:px-0">
                 {isGenerating ? (
                   <div className="col-span-1 sm:col-span-2 md:col-span-4 flex items-center justify-center p-12">
                     <div className="flex flex-col items-center gap-4">
