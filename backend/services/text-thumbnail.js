@@ -16,16 +16,40 @@ async function enhancePromptWithGroq(userText) {
         messages: [
           {
               role: 'system',
-              content: 'You are a thumbnail generation expert. You need to generate a prompt for a YouTube thumbnail.'
+              content: 'You are a thumbnail generation expert. You need to generate a prompt for a YouTube thumbnail. Analyze “TITLE” to determine the most vital keywords and imagery. Propose a thumbnail layout that balances image, text, and any icons. Describe the final design (composition, colors, fonts) for straightforward implementation. '
           },
           {
               role: 'user',
-              content: `Generate a YouTube thumbnail description for the title: "${userText}". Key elements: 
-              1. **Title**: Prominently feature in bold, large white text at the top. 
-              2. **Central Figure**: Show a confident figure engaging with relevant objects or tech. 
-              3. **Background**: Use a vibrant gradient with tech patterns and subtle glowing effects. 
-              4. **Accents**: Add optional emojis or icons to enhance energy. 
-              5. **Layout**: Ensure a clean, balanced design focused on readability.`
+              content: `YouTube Thumbnail Generation Prompt:
+               Title Input: "${userText}"
+               Objective: Create an eye-catching thumbnail that instantly conveys the video’s topic and entices viewers to click.
+
+Design Guidelines:
+
+Main Visual
+
+Use a clear, relevant image directly tied to “${userText}”.
+Ensure it’s bold and instantly recognizable.
+Background
+
+Choose contrasting colors, gradients, or subtle textures to highlight the main image and text.
+Maintain clarity and avoid overcrowding.
+Text
+
+Feature “${userText}” prominently in a large, easy-to-read font.
+Use bold or highlighted effects (glow/shadow/neon) to emphasize key words.
+Icons & Symbols
+
+Incorporate relevant icons or symbols that reinforce the video’s theme.
+Optionally include channel branding or a small logo if appropriate.
+Color Scheme
+
+Pick harmonious colors that evoke the right mood for the content.
+Aim for a palette that stands out in YouTube’s recommended feed.
+Effects
+
+Apply subtle glow, drop shadow, or gentle 3D elements to give depth.
+Avoid overusing effects that might clutter the design.`
           }
       ],
       
@@ -69,7 +93,7 @@ async function generateImageWithNebiusAI(prompt, { width, height }, referenceIma
         width,
         height,
         response_extension: "webp",
-        num_inference_steps: 15,
+        num_inference_steps: 25,
         image: referenceImage
       })
     });

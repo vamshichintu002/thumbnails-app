@@ -15,8 +15,9 @@ const YOUTUBE_URL_PATTERN = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/
 
 // Groq prompts for different cases
 const GROQ_PROMPTS = {
-  style: "Analyze this YouTube thumbnail and describe its visual style, composition, and key elements. What are the dominant colors, textures, and overall aesthetic? How are the elements arranged and positioned? What are the key themes or messages conveyed through the visual elements?",
-  recreate: "Analyze this YouTube thumbnail and provide a creative, detailed description that would help in generating a new, unique thumbnail while keeping the main theme. Focus on the visual style, composition, and key elements."
+  style: (videoTitle) => `Analyze this YouTube thumbnail and describe its overall style, color theme, composition, and font choices. Identify any notable imagery or icons. Assess how effectively it communicates its topic. Ensure the TITLE: "${videoTitle}" is VISUALLY PROMINENT in the design with bold, high-contrast text. Suggest improvements for engagement. Keep below 2000 characters.`,
+
+  recreate: (videoTitle) => `Analyze this YouTube thumbnail's visual style, composition, colors, textures, and key elements. Describe how the TITLE: "${videoTitle}" is displayed (font size, position, color). If missing, demand it be added prominently. Propose a redesign with the title as a focal point. Keep below 2000 characters.`
 };
 
 // Map frontend aspect ratios to image dimensions
@@ -27,7 +28,7 @@ const aspectRatioMap = {
   '4:5': { width: 1080, height: 1350 }     // Instagram recommended
 };
 
-async function analyzeImageWithGroq(imageUrl, prompt) {
+async function analyzeImageWithGroq(imageUrl, prompt, videoTitle) {
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -41,7 +42,7 @@ async function analyzeImageWithGroq(imageUrl, prompt) {
           {
             role: 'user',
             content: [
-              { type: 'text', text: prompt },
+              { type: 'text', text: prompt(videoTitle) },
               { type: 'image_url', image_url: { url: imageUrl } }
             ]
           }
@@ -81,7 +82,7 @@ async function generateImageWithNebiusAI(prompt, { width, height }, referenceIma
         width,
         height,
         response_extension: "webp",
-        num_inference_steps: 15,
+        num_inference_steps: 25,
         image: referenceImage
       })
     });
@@ -177,7 +178,7 @@ export const YoutubeThumbnailService = {
       let generatedImageUrl;
       if (referenceImageUrl) {
         // Case 3: With user photo - always use style analysis regardless of generation option
-        const imageAnalysis = await analyzeImageWithGroq(youtubeThumbnailUrl, GROQ_PROMPTS.style);
+        const imageAnalysis = await analyzeImageWithGroq(youtubeThumbnailUrl, GROQ_PROMPTS.style, videoTitle);
         
         const replicateOutput = await replicate.run(
           "bytedance/flux-pulid:8baa7ef2255075b46f4d91cd238c21d31181b3e6a864463f967960bb0112525b",
@@ -201,10 +202,10 @@ export const YoutubeThumbnailService = {
       } else {
         // Case 1 & 2: Without user photo - Use Nebius AI
         const groqPrompt = GROQ_PROMPTS[generationOption] || GROQ_PROMPTS.style;
-        const imageAnalysis = await analyzeImageWithGroq(youtubeThumbnailUrl, groqPrompt);
+        const imageAnalysis = await analyzeImageWithGroq(youtubeThumbnailUrl, groqPrompt, videoTitle);
         
         const result = await generateImageWithNebiusAI(
-          `${imageAnalysis} Create a YouTube thumbnail for "${videoTitle}"`,
+          ` ${imageAnalysis}`,
           dimensions,
           youtubeThumbnailUrl
         );

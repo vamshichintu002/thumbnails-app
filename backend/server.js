@@ -14,6 +14,15 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3001;
 
+// Use JSON parser for all non-webhook routes
+app.use((req, res, next) => {
+  if (req.originalUrl === '/api/stripe/webhook') {
+    next();
+  } else {
+    express.json()(req, res, next);
+  }
+});
+
 // CORS configuration
 app.use(cors({
   origin: function(origin, callback) {
@@ -42,11 +51,7 @@ app.use(cors({
 // Handle preflight requests
 app.options('*', cors());
 
-// Handle raw body for webhooks, JSON for other routes
-app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
-app.use(express.json()); // For all other routes
-
-// Mount the stripe routes
+// Mount the stripe routes (which includes the webhook handler with raw body parsing)
 app.use('/api/stripe', stripeRoutes);
 
 // Thumbnail generation endpoints

@@ -12,6 +12,7 @@ dotenv.config();
 
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 // Create a checkout session
 router.post('/create-checkout-session', async (req, res) => {
@@ -110,11 +111,8 @@ router.post('/create-checkout-session', async (req, res) => {
   }
 });
 
-// This must be before all other middleware for the webhook route
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
 // Stripe webhook handler
-router.post('/webhook', async (req, res) => {
+router.post('/webhook', express.raw({type: 'application/json'}), async (req, res) => {
   console.log('🔔 Webhook received!');
   const sig = req.headers['stripe-signature'];
   
@@ -131,17 +129,8 @@ router.post('/webhook', async (req, res) => {
   let event;
 
   try {
-    // Get the raw body buffer
-    const payload = req.body;
-    console.log('Webhook secret:', endpointSecret);
-    console.log('Signature:', sig);
-    
-    // Verify the event
-    event = stripe.webhooks.constructEvent(
-      payload,
-      sig,
-      endpointSecret
-    );
+    // Verify the event with raw body
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
     
     console.log('✅ Webhook verified! Event type:', event.type);
     console.log('Event data:', JSON.stringify(event.data.object, null, 2));
