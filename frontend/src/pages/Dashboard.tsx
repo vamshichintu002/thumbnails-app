@@ -496,12 +496,25 @@ export default function Dashboard() {
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-white/80 mb-2">Image Description</label>
-                    <input
-                      type="text"
+                    <textarea
                       value={imageText}
                       onChange={(e) => setImageText(e.target.value)}
-                      placeholder="Describe what you want in the image"
-                      className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                      placeholder={`Example Format:
+
+Video Topic: Epic Space Battle
+
+Thumbnail Style: Hyper-realistic, cinematic, dramatic lighting
+
+Main Subjects: A heavily armed man engaging in combat with multiple alien fighters. The main spaceship should be centered, sleek, and clearly visible.
+
+Text Ideas: "Space Battle!" "Chaos in the Cosmos"
+
+Additional User Description: Explosions, laser fire, nebulae in the background, sense of speed and motion, feeling of intense conflict.`}
+                      className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors min-h-[100px] resize-y"
+                      style={{ 
+                        overflowY: 'auto',
+                        lineHeight: '1.5'
+                      }}
                     />
                   </div>
                   

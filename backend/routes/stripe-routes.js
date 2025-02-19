@@ -18,7 +18,7 @@ const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 router.post('/create-checkout-session', async (req, res) => {
   try {
     console.log('Received checkout request:', req.body);
-    const { priceType, userId, userEmail, customerDetails } = req.body;
+    const { priceType, userId, userEmail, customerDetails, couponId } = req.body;
     
     if (!priceType || !userId || !userEmail || !customerDetails?.name) {
       return res.status(400).json({ 
@@ -60,54 +60,31 @@ router.post('/create-checkout-session', async (req, res) => {
 
     console.log('Using price ID:', priceId);
 
-    // Create checkout session with customer details
-    const sessionConfig = {
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      mode: priceType === 'credit-pack' ? 'payment' : 'subscription',
-      success_url: `${process.env.FRONTEND_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONTEND_URL}/cancel`,
-      client_reference_id: userId,
-      customer_email: userEmail,
-      metadata: {
+    try {
+      const session = await createCheckoutSession(
         priceType,
         userId,
-        userEmail
-      },
-      billing_address_collection: 'required'
-    };
+        userEmail,
+        customerDetails,
+        couponId
+      );
 
-    // Only add customer_creation for payment mode
-    if (priceType === 'credit-pack') {
-      sessionConfig.customer_creation = 'always';
+      console.log('Checkout session created:', session.id);
+      res.json({ url: session.url });
+    } catch (error) {
+      if (error.message === 'Invalid coupon code') {
+        return res.status(400).json({ error: 'Invalid or expired coupon code' });
+      }
+      throw error;
     }
-
-    console.log('Creating checkout session with config:', JSON.stringify(sessionConfig, null, 2));
-
-    const session = await stripe.checkout.sessions.create(sessionConfig);
-
-    console.log('Checkout session created:', session.id);
-    res.json({ url: session.url });
   } catch (error) {
     console.error('Detailed error:', {
       message: error.message,
       type: error.type,
       code: error.code,
       param: error.param,
-      stack: error.stack
     });
-    
-    res.status(500).json({ 
-      error: 'Failed to create checkout session',
-      details: error.message,
-      code: error.code,
-      type: error.type
-    });
+    res.status(500).json({ error: error.message });
   }
 });
 

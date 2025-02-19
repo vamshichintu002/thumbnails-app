@@ -15,10 +15,25 @@ const YOUTUBE_URL_PATTERN = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/
 
 // Groq prompts for different cases
 const GROQ_PROMPTS = {
-  style: (videoTitle) => `Analyze this YouTube thumbnail and describe its overall style, color theme, composition, and font choices. Identify any notable imagery or icons. Assess how effectively it communicates its topic. Ensure the TITLE: "${videoTitle}" is VISUALLY PROMINENT in the design with bold, high-contrast text. Suggest improvements for engagement. Keep below 2000 characters.`,
+  style: (videoTitle) => `You have a reference YouTube thumbnail image and a new video title: "${videoTitle}".
+Analyze the reference image for:
+• Color palette (dominant colors, gradients)
+• Composition (where key elements are placed)
+• Typography (font style, size, alignment)
+• Overall mood (fun, serious, energetic, etc.)
 
-  recreate: (videoTitle) => `Analyze this YouTube thumbnail's visual style, composition, colors, textures, and key elements. Describe how the TITLE: "${videoTitle}" is displayed (font size, position, color). If missing, demand it be added prominently. Propose a redesign with the title as a focal point. Keep below 2000 characters.`
-};
+Now generate a single, concise text prompt that will help an image-generation model replicate the **same style** as the reference thumbnail. 
+
+Key requirements:
+1. Maintain similar color palette, composition layout, and typography style.
+2. Include the new title "${videoTitle}" as the main text in the thumbnail.
+3. The prompt must be suitable for a 16:9 YouTube thumbnail.
+4. The description should briefly mention the desired lighting or atmosphere if relevant (e.g., “bright and energetic,” “dramatic shadows,” etc.).
+5. Keep the prompt under 60 words if possible.
+
+Provide **only** the final text prompt to be sent to the image-generation model.`,
+
+  recreate: (videoTitle) => `Analyze this YouTube thumbnail and provide a creative, detailed description that would help in generating a new, unique thumbnail while keeping the main theme. Focus on the visual style, composition, and key elements. Output should be Provide **only** the final text prompt to be sent to the image-generation model.`};
 
 // Map frontend aspect ratios to image dimensions
 const aspectRatioMap = {
@@ -37,7 +52,7 @@ async function analyzeImageWithGroq(imageUrl, prompt, videoTitle) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama-3.2-11b-vision-preview',
+        model: 'llama-3.2-90b-vision-preview',
         messages: [
           {
             role: 'user',
@@ -184,7 +199,7 @@ export const YoutubeThumbnailService = {
           "bytedance/flux-pulid:8baa7ef2255075b46f4d91cd238c21d31181b3e6a864463f967960bb0112525b",
           {
             input: {
-              prompt: `${imageAnalysis} Create a professional YouTube thumbnail for "${videoTitle}" incorporating these style elements and the person from the reference image. Ensure high quality, engaging composition, and vibrant colors.`,
+              prompt: `${imageAnalysis}`,
               image: youtubeThumbnailUrl,
               main_face_image: referenceImageUrl,
               num_outputs: 1,

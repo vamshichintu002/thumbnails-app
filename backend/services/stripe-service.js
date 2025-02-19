@@ -41,9 +41,9 @@ const PRICE_IDS = {
   }
 };
 
-export const createCheckoutSession = async (priceType, userId, userEmail) => {
+export const createCheckoutSession = async (priceType, userId, userEmail, customerDetails, couponId = null) => {
   try {
-    console.log('Starting checkout session creation with:', { priceType, userId, userEmail });
+    console.log('Starting checkout session creation with:', { priceType, userId, userEmail, couponId });
     
     if (!PRICE_IDS[priceType]) {
       console.error('Invalid price type:', priceType);
@@ -66,6 +66,19 @@ export const createCheckoutSession = async (priceType, userId, userEmail) => {
       throw new Error('FRONTEND_URL must start with http:// or https://');
     }
 
+    // Validate coupon if provided
+    if (couponId) {
+      try {
+        const coupon = await stripe.coupons.retrieve(couponId);
+        if (!coupon.valid) {
+          throw new Error('Invalid or expired coupon');
+        }
+      } catch (error) {
+        console.error('Error validating coupon:', error);
+        throw new Error('Invalid coupon code');
+      }
+    }
+
     const baseSessionConfig = {
       payment_method_types: ['card'],
       line_items: [
@@ -84,7 +97,15 @@ export const createCheckoutSession = async (priceType, userId, userEmail) => {
         priceType: priceType
       },
       billing_address_collection: 'required',
+      allow_promotion_codes: true, // Enable promotion code field in checkout
     };
+
+    // Add coupon if provided
+    if (couponId) {
+      baseSessionConfig.discounts = [{
+        coupon: couponId,
+      }];
+    }
 
     const sessionConfig = PRICE_IDS[priceType].isSubscription 
       ? {

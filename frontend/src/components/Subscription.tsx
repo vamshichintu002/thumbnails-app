@@ -81,24 +81,7 @@ const plans: Plan[] = [
     priceType: (isYearly: boolean) => isYearly ? 'pro-yearly' : 'pro-monthly',
     isPopular: true,
   },
-  {
-    name: "CREDIT PACKS",
-    price: "10",
-    yearlyPrice: "10",
-    period: "one-time",
-    yearlyPeriod: "one-time",
-    credits: "250 credits",
-    features: [
-      "Purchase only credits after exhausting monthly credits",
-      "10$ = 250 credits",
-      "Use anytime",
-      "Never expires",
-    ],
-    description: "Additional credits when you need them",
-    buttonText: "Buy Credits",
-    priceType: (_isYearly: boolean) => 'credit-pack',
-    isPopular: false,
-  },
+  
 ];
 
 const SubscriptionStatus: React.FC<{
@@ -413,56 +396,67 @@ export const Subscription: React.FC<SubscriptionProps> = ({
       </div>
 
       {/* Plans Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
         {plans.map((plan) => (
           <div
             key={plan.name}
             className={cn(
-              "relative rounded-2xl border p-6",
-              "bg-card text-card-foreground shadow-sm",
-              plan.isPopular && "border-blue-600"
+              "relative rounded-2xl border p-8",
+              "bg-card text-card-foreground shadow-sm transition-all duration-200",
+              plan.isPopular ? "border-blue-600 scale-105" : "border-white/10 hover:border-white/20",
+              "flex flex-col justify-between"
             )}
           >
             {plan.isPopular && (
-              <div className="absolute -top-3 left-0 right-0 mx-auto w-fit px-3 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">
+              <div className="absolute -top-3 left-0 right-0 mx-auto w-fit px-4 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">
                 Most Popular
               </div>
             )}
 
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold">{plan.name}</h3>
+            <div className="space-y-6">
               <div>
-                <span className="text-3xl font-bold">
+                <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                <p className="text-sm text-white/60">
+                  {plan.description}
+                </p>
+              </div>
+
+              <div className="mt-4">
+                <span className="text-4xl font-bold">
                   ${isYearly ? plan.yearlyPrice : plan.price}
                 </span>
-                <span className="text-muted-foreground">
+                <span className="text-white/60 ml-2">
                   /{isYearly ? plan.yearlyPeriod : plan.period}
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {plan.description}
-              </p>
-              <button
-                onClick={() => handleCheckout(plan)}
-                disabled={isLoading}
-                className={cn(
-                  "w-full rounded-lg px-4 py-2 text-sm font-medium",
-                  "bg-primary text-primary-foreground shadow",
-                  "hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1",
-                  "focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-50"
-                )}
-              >
-                {isLoading ? 'Processing...' : plan.buttonText}
-              </button>
-              <ul className="space-y-2 text-sm leading-6">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-green-500" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
+
+              <div className="py-4">
+                <p className="text-sm font-medium text-white/80 mb-4">Plan Includes:</p>
+                <ul className="space-y-3 text-sm leading-6">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                      <span className="text-white/80">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
+
+            <button
+              onClick={() => handleCheckout(plan)}
+              disabled={isLoading}
+              className={cn(
+                "w-full rounded-lg px-6 py-3 text-sm font-medium mt-6",
+                "bg-blue-600 text-white shadow-lg",
+                "hover:bg-blue-700 transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2",
+                "focus-visible:ring-blue-500 focus-visible:ring-offset-2",
+                "disabled:pointer-events-none disabled:opacity-50"
+              )}
+            >
+              {isLoading ? 'Processing...' : plan.buttonText}
+            </button>
           </div>
         ))}
       </div>
