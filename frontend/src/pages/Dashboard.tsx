@@ -65,6 +65,7 @@ export default function Dashboard() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [existingImages, setExistingImages] = useState<Array<{id: string; image_url: string}>>([]);
   const [selectedExistingImage, setSelectedExistingImage] = useState<string | null>(null);
+  const [selectedGender, setSelectedGender] = useState<'male' | 'female'>('male');
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -517,6 +518,35 @@ Additional User Description: Explosions, laser fire, nebulae in the background, 
                       }}
                     />
                   </div>
+
+                  {/* Gender Selection */}
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-3">Select Character Gender</label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="gender"
+                          value="male"
+                          checked={selectedGender === 'male'}
+                          onChange={(e) => setSelectedGender(e.target.value as 'male' | 'female')}
+                          className="w-4 h-4 text-blue-600 bg-white/5 border-white/10 focus:ring-blue-500"
+                        />
+                        <span className="text-white/80">Male</span>
+                      </label>
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="gender"
+                          value="female"
+                          checked={selectedGender === 'female'}
+                          onChange={(e) => setSelectedGender(e.target.value as 'male' | 'female')}
+                          className="w-4 h-4 text-blue-600 bg-white/5 border-white/10 focus:ring-blue-500"
+                        />
+                        <span className="text-white/80">Female</span>
+                      </label>
+                    </div>
+                  </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-white/80 mb-2">Reference Image (Optional)</label>
@@ -871,8 +901,25 @@ Additional User Description: Explosions, laser fire, nebulae in the background, 
                 </span>
               </button>
               {error && (
-                <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-                  {error}
+                <div className="fixed inset-0 flex items-center justify-center z-50">
+                  <div className="bg-red-500/10 backdrop-blur-sm fixed inset-0" onClick={() => setError(null)}></div>
+                  <div className="bg-gray-900 border border-red-500/20 rounded-lg p-6 max-w-md w-full mx-4 relative z-10">
+                    <div className="text-center">
+                      <div className="flex items-center justify-center mb-4">
+                        <svg className="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-medium text-white mb-2">Error</h3>
+                      <p className="text-white/80">{error}</p>
+                      <button
+                        onClick={() => setError(null)}
+                        className="mt-4 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-white rounded-lg transition-colors"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -979,8 +1026,7 @@ Additional User Description: Explosions, laser fire, nebulae in the background, 
                             strokeLinecap="round" 
                             strokeLinejoin="round" 
                             strokeWidth={2} 
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                          />
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
                       </button>
                       <button
@@ -1048,106 +1094,44 @@ Additional User Description: Explosions, laser fire, nebulae in the background, 
   };
 
   const handleGenerate = async () => {
-    if (!user) {
-      setError('Please log in to generate thumbnails');
-      return;
-    }
-
-    setIsGenerating(true);
     setError(null);
-
+    setIsGenerating(true);
+    
     try {
-      let response;
-      const baseUrl = API_URL || 'http://localhost:3000';
+      // Validate reference image for image generation
+      if (generationType === 'image' && !selectedExistingImage) {
+        setError('Please select a reference image');
+        setIsGenerating(false);
+        return;
+      }
 
-      console.log('Starting thumbnail generation...');
-      console.log('Generation type:', generationType);
+      const response = await fetch(`${API_URL}/api/generate-thumbnail`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user?.id,
+          generationType: generationType === 'image' ? 'image_to_thumbnail' : 
+                         generationType === 'youtube' ? 'youtube_to_thumbnail' : 
+                         'text_to_thumbnail',
+          prompt: imageText,
+          youtubeUrl,
+          videoTitle: title,
+          generationOption,
+          referenceImageUrl: selectedExistingImage,
+          aspectRatio: selectedRatio,
+          gender: selectedGender,
+        }),
+      });
 
-      switch (generationType) {
-        case 'title':
-          console.log('Text to thumbnail request:', {
-            userId: user.id,
-            generationType: 'text_to_thumbnail',
-            prompt: title,
-            aspectRatio: selectedRatio
-          });
-
-          response = await fetch(`${baseUrl}/api/generate-thumbnail`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              userId: user.id,
-              generationType: 'text_to_thumbnail',
-              prompt: title,
-              aspectRatio: selectedRatio
-            }),
-          });
-          break;
-        case 'image':
-          console.log('Image to thumbnail request:', {
-            userId: user.id,
-            generationType: 'image_to_thumbnail',
-            prompt: imageText,
-            aspectRatio: selectedRatio,
-            referenceImageUrl: selectedExistingImage
-          });
-
-          response = await fetch(`${baseUrl}/api/generate-thumbnail`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              userId: user.id,
-              generationType: 'image_to_thumbnail',
-              prompt: imageText,
-              aspectRatio: selectedRatio,
-              referenceImageUrl: selectedExistingImage
-            }),
-          });
-          break;
-        case 'youtube':
-          console.log('YouTube to thumbnail request:', {
-            userId: user.id,
-            generationType: 'youtube_to_thumbnail',
-            youtubeUrl: youtubeUrl,
-            videoTitle: title,
-            aspectRatio: selectedRatio,
-            generationOption,
-            referenceImageUrl: selectedExistingImage
-          });
-
-          response = await fetch(`${baseUrl}/api/generate-thumbnail`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              userId: user.id,
-              generationType: 'youtube_to_thumbnail',
-              youtubeUrl: youtubeUrl,
-              videoTitle: title,
-              aspectRatio: selectedRatio,
-              generationOption,
-              referenceImageUrl: selectedExistingImage
-            }),
-          });
-          break;
-
-        default:
-          setError('Invalid generation type');
-          return;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate thumbnail');
       }
 
       const data = await response.json();
       console.log('API Response:', data);
-
-      if (!response.ok) {
-        console.error('API Error:', data);
-        throw new Error(data.error || 'Failed to generate thumbnail');
-      }
 
       // Add the new generation to the list
       setUserGenerations(prev => [data, ...prev]);
