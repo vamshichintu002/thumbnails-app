@@ -1115,7 +1115,9 @@ Additional User Description: Explosions, laser fire, nebulae in the background, 
           generationType: generationType === 'image' ? 'image_to_thumbnail' : 
                          generationType === 'youtube' ? 'youtube_to_thumbnail' : 
                          'text_to_thumbnail',
-          prompt: imageText,
+          prompt: generationType === 'image' ? imageText : 
+                 generationType === 'youtube' ? title : 
+                 title,
           youtubeUrl,
           videoTitle: title,
           generationOption,
@@ -1276,7 +1278,7 @@ Additional User Description: Explosions, laser fire, nebulae in the background, 
                           className="px-4 md:px-6 py-2 md:py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-lg shadow-blue-600/20 transition-all duration-200 flex items-center space-x-2 transform hover:-translate-y-0.5"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                            <path fillRule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
                           </svg>
                           <span>Download</span>
                         </button>
