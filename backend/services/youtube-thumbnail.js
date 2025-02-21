@@ -33,7 +33,8 @@ Key requirements:
 
 Provide **only** the final text prompt to be sent to the image-generation model.`,
 
-  recreate: (videoTitle) => `Analyze this YouTube thumbnail and provide a creative, detailed description that would help in generating a new, unique thumbnail while keeping the main theme. Focus on the visual style, composition, and key elements. Output should be Provide **only** the final text prompt to be sent to the image-generation model.`};
+  recreate: () => `"Analyze this YouTube thumbnail and describe its visual style, composition, and key elements. What are the dominant colors, textures, and overall aesthetic? How are the elements arranged and positioned? What are the key themes or messages conveyed through the visual elements?
+`};
 
 // Map frontend aspect ratios to image dimensions
 const aspectRatioMap = {
@@ -97,14 +98,13 @@ async function generateImageWithNebiusAI(prompt, { width, height }, referenceIma
         width,
         height,
         response_extension: "webp",
-        num_inference_steps: 25,
+        num_inference_steps: 30,
         image: referenceImage
       })
     });
 
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`Nebius AI API error: ${response.status} ${text}`);
+      throw new Error('Something went wrong. Please try again');
     }
 
     const data = await response.json();
@@ -112,7 +112,7 @@ async function generateImageWithNebiusAI(prompt, { width, height }, referenceIma
     return data;
   } catch (error) {
     console.error('Error generating image with Nebius AI:', error);
-    throw error;
+    throw new Error('Something went wrong. Please try again');
   }
 }
 
@@ -205,7 +205,7 @@ export const YoutubeThumbnailService = {
               num_outputs: 1,
               width: dimensions.width,
               height: dimensions.height,
-              negative_prompt: "bad quality, worst quality, text, signature, watermark, extra limbs"
+              negative_prompt: "bad quality, worst quality, text, signature, watermark, extra limbs,"
             }
           }
         );

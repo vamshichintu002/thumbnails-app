@@ -71,8 +71,7 @@ async function generateImageWithNebiusAI(prompt, { width, height }, referenceIma
     });
 
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`Nebius AI API error: ${response.status} ${text}`);
+      throw new Error('Something went wrong. Please try again');
     }
 
     const data = await response.json();
@@ -80,7 +79,7 @@ async function generateImageWithNebiusAI(prompt, { width, height }, referenceIma
     return data;
   } catch (error) {
     console.error('Error generating image with Nebius AI:', error);
-    throw error;
+    throw new Error('Something went wrong. Please try again');
   }
 }
 
