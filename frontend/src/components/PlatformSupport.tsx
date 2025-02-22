@@ -10,7 +10,7 @@ const platforms = [
     icon: Youtube,
     color: "text-red-500",
     bgColor: "bg-red-500/10",
-    ratios: ["16:9"],
+    ratios: ["16:9","9:16"],
     description: "Perfect for standard YouTube thumbnails"
   },
   {
@@ -18,7 +18,7 @@ const platforms = [
     icon: Instagram,
     color: "text-pink-500",
     bgColor: "bg-pink-500/10",
-    ratios: ["1:1", "4:5"],
+    ratios: ["9:16"],
     description: "Optimized for feed posts and reels"
   },
   {

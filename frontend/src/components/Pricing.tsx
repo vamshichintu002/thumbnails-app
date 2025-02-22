@@ -113,7 +113,7 @@ export function Pricing() {
           </div>
         </motion.div>
 
-        <div className="flex justify-center items-center gap-3 mb-12">
+        <div className="flex justify-center items-center gap-3 mb-20">
           <span className={cn(
             "text-sm font-medium transition-colors",
             !isYearly ? "text-foreground" : "text-muted-foreground"

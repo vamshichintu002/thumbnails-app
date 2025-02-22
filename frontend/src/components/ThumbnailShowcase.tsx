@@ -3,24 +3,24 @@ import { InfiniteMovingCards } from "./ui/infinite-moving-cards";
 
 const exampleThumbnails = [
   {
-    imageUrl: "https://picsum.photos/640/360?random=1",
-    title: "Create Engaging YouTube Thumbnails"
+    imageUrl: "https://ujsjwovfdifsdavzwiec.supabase.co/storage/v1/object/public/Image-share//a-dramatic-scene-where-a-massive-asteroi_AQ4wdOHRRTWpYNsThDbLZg_DSGy6Bb2SH2JlsBWZqX2eQ.png",
+    title: ""
   },
   {
-    imageUrl: "https://picsum.photos/640/360?random=2",
-    title: "AI-Powered Thumbnail Generation"
+    imageUrl: "https://ujsjwovfdifsdavzwiec.supabase.co/storage/v1/object/public/Image-share//cZ-BL8xKTYmZf1KZWXEg9w.webp",
+    title: ""
   },
   {
-    imageUrl: "https://picsum.photos/640/360?random=3",
-    title: "Stand Out From The Crowd"
+    imageUrl: "https://ujsjwovfdifsdavzwiec.supabase.co/storage/v1/object/public/Image-share//a-dramatic-scene-of-an-airplane-engulfed_02mbsP0RRVmPsAWyZuAIsA_4F4FwO_8Q6qinU9m1wL2fg.png",
+    title: ""
   },
   {
-    imageUrl: "https://picsum.photos/640/360?random=4",
-    title: "Professional Quality Designs"
+    imageUrl: "https://ujsjwovfdifsdavzwiec.supabase.co/storage/v1/object/public/Image-share//ftyWrqtESKedrCo0vAlJEA.webp",
+    title: ""
   },
   {
-    imageUrl: "https://picsum.photos/640/360?random=5",
-    title: "Boost Your Channel Growth"
+    imageUrl: "https://ujsjwovfdifsdavzwiec.supabase.co/storage/v1/object/public/Image-share//a-man-in-a-red-shirt-with-a-surprised-ex_Ua-L-c0DRUKbFgAKktAI_w_AKVpxvFPR7qzDCUEyVFTkA.png",
+    title: ""
   }
 ];
 
@@ -29,7 +29,7 @@ export const ThumbnailShowcase = () => {
     <section className="w-full py-12 bg-black">
       <div className="container mx-auto px-4">
         <h2 className="text-3xl font-bold text-center text-white mb-8">
-          AI-Generated Thumbnails That Convert
+        Our Generated Thumbnails
         </h2>
         <InfiniteMovingCards
           items={exampleThumbnails}

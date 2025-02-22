@@ -1,11 +1,53 @@
 import React from 'react';
-import { ThreeDPhotoCarousel } from './ui/3d-carousel';
 import Squares from './Squares';
 import { Play, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import Vimeo from '@vimeo/player';
+import { useEffect, useState } from 'react';
 
 export function Hero() {
   const navigate = useNavigate();
+  const [displayText, setDisplayText] = useState('');
+  const [currentOptionIndex, setCurrentOptionIndex] = useState(0);
+  const [isTyping, setIsTyping] = useState(true);
+  
+  const options = ['Your own face', 'Title to Thumbnail', 'Thumbnail to Thumbnail'];
+  
+  useEffect(() => {
+    const baseText = 'Generate Thumbnails using ';
+    let currentText = baseText;
+    let charIndex = 0;
+    
+    if (isTyping) {
+      const typingInterval = setInterval(() => {
+        if (charIndex < options[currentOptionIndex].length) {
+          currentText += options[currentOptionIndex][charIndex];
+          setDisplayText(currentText);
+          charIndex++;
+        } else {
+          clearInterval(typingInterval);
+          setTimeout(() => {
+            setIsTyping(false);
+          }, 1500);
+        }
+      }, 100);
+      
+      return () => clearInterval(typingInterval);
+    } else {
+      const deletingInterval = setInterval(() => {
+        if (currentText.length > baseText.length) {
+          currentText = currentText.slice(0, -1);
+          setDisplayText(currentText);
+        } else {
+          clearInterval(deletingInterval);
+          setCurrentOptionIndex((prev) => (prev + 1) % options.length);
+          setIsTyping(true);
+        }
+      }, 50);
+      
+      return () => clearInterval(deletingInterval);
+    }
+  }, [currentOptionIndex, isTyping]);
 
   return (
     <section className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center">
@@ -42,8 +84,13 @@ export function Hero() {
                 </span>
               </h1>
               
-              <p className="text-lg text-gray-400 mb-10 mt-6 max-w-lg">
-                Ideate & package your videos faster & cheaper. Start with 50 free credits, no credit card required.
+              <p className="text-lg mb-10 mt-6 max-w-lg relative">
+                <span className="text-white font-bold drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
+                  {displayText}
+                  <span className="inline-block w-0.5 h-5 ml-0.5 bg-white animate-[blink_1s_infinite] align-middle">
+                    &nbsp;
+                  </span>
+                </span>
               </p>
               
               <div className="flex flex-wrap gap-3 mb-10 lg:mb-14 lg:gap-4 mt-8">
@@ -64,6 +111,7 @@ export function Hero() {
                   <span className="text-xs lg:text-sm text-gray-400">68 sec</span>
                 </button>
               </div>
+              <p className="text-sm text-gray-400 -mt-6 mb-10">No credit card required</p>
               
               <div className="flex items-center gap-4 text-sm text-gray-400 mt-6">
                 <span>Trusted by</span>
@@ -74,10 +122,71 @@ export function Hero() {
               </div>
             </div>
 
-            {/* Right Column - Carousel */}
-            <div className="relative lg:-mr-32 mt-8 lg:mt-0">
-              <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-transparent lg:hidden" />
-              <ThreeDPhotoCarousel />
+            {/* Right Column - Video */}
+            <div className="relative lg:mr-8 mt-8 lg:mt-0 overflow-hidden rounded-2xl border border-white/10 shadow-2xl group">
+              <div className="relative w-full aspect-video">
+                <iframe
+                  src="https://player.vimeo.com/video/164916743?background=1&autoplay=1&loop=1&byline=0&title=0&controls=1&transparent=0&dnt=1"
+                  className="absolute inset-0 w-full h-full scale-110 transition-transform duration-300 group-hover:scale-105 video-player-iframe"
+                  frameBorder="0"
+                  allow="autoplay; fullscreen"
+                  title="Promotional Video"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-end justify-end gap-4 p-4 opacity-0 group-hover:opacity-100">
+                  <button 
+                    className="p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+                    onClick={() => {
+                      const iframe = document.querySelector('iframe');
+                      if (iframe) {
+                        const player = new Vimeo(iframe);
+                        player.getMuted().then((muted: boolean) => {
+                          player.setMuted(!muted);
+                        }).catch((error: Error) => {
+                          console.error('Error toggling mute:', error);
+                        });
+                      }
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                    </svg>
+                  </button>
+                  <button 
+                    className="p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+                    onClick={() => {
+                      const iframe = document.querySelector('.video-player-iframe');
+                      if (iframe) {
+                        try {
+                          if (document.fullscreenElement) {
+                            document.exitFullscreen();
+                          } else {
+                            if (iframe.requestFullscreen) {
+                              iframe.requestFullscreen();
+                            } else if (iframe.webkitRequestFullscreen) {
+                              iframe.webkitRequestFullscreen();
+                            } else if (iframe.mozRequestFullScreen) {
+                              iframe.mozRequestFullScreen();
+                            } else if (iframe.msRequestFullscreen) {
+                              iframe.msRequestFullscreen();
+                            }
+                          }
+                        } catch (error) {
+                          console.error('Error toggling fullscreen:', error);
+                        }
+                      }
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
+                      <path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+                      <path d="M3 16v3a2 2 0 0 0 2 2h3"/>
+                      <path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
