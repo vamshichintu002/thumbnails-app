@@ -30,14 +30,12 @@ async function enhancePromptWithGroq(userPrompt, gender) {
         messages: [
           {
             role: 'system',
-            content: `Must include a person that is ${gender} in the prompt making the thumbnail prompt
-            `
+            content: `Strictly ensure the total response does not exceed 1900 characters while maintaining all requested details`
   
           },
           {
             role: 'user',
-            content: `enhance the following prompt: ${userPrompt} you must include a ${gender} person in that thumbnail prompt.
-`
+            content: `Create a highly detailed and vivid thumbnail in a hyper-realistic, cinematic, 3D composite style with vibrant colors and dramatic lighting based on the title '${userPrompt}'. The main subject is a person of gender '${gender}', wearing [describe attire] and engaged in [describe key action or posture]. The subject's face must be straight, highly expressive, and large, positioned either on one side or in the center for maximum impact. The text '${userPrompt}' must be come displayed on the thumbnail in a bold, attention-grabbing style. The environment is [describe surroundings, atmosphere, and background details]. The lighting is [describe lighting for mood or dramatic effect]. The composition is [describe framing, perspective, and dynamic elements]. The style is [realism, cyberpunk, fantasy, etc.], evoking a sense of [mood/emotion]. Strictly ensure the total response does not exceed 1900 characters while maintaining all requested details.`
           }
         ],
         temperature: 1,

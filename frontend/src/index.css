@@ -14,10 +14,12 @@
     --highlight: 224 71% 45%;
     --brand: 210 100% 50%;
     --brand-foreground: 213 100% 60%;
+    --brand-rgb: 0, 122, 255;
   }
   .dark {
     --brand: 213 100% 60%;
     --brand-foreground: 210 100% 50%;
+    --brand-rgb: 33, 150, 243;
   }
 }
 
@@ -150,6 +152,19 @@ body {
   100% {
     background-position: 0% 50%;
   }
+}
+
+@keyframes scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-50% - 0.5rem));
+  }
+}
+
+.animate-scroll {
+  animation: scroll var(--animation-duration, 20s) var(--animation-direction, forwards) linear infinite;
 }
 
 /* Glass effect for UI elements */

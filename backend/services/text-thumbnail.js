@@ -16,12 +16,11 @@ async function enhancePromptWithGroq(userText) {
         messages: [
           {
               role: 'system',
-              content: ' '
+              content: 'Strictly ensure the total response does not exceed 1900 characters while maintaining all requested details'
           },
           {
               role: 'user',
-              content: `A highly detailed and vivid thumbnail illustration featuring [main subject description]. The main subject is [detailed description of the subject, including physical features, attire, and key actions or postures]. The environment is [description of the surroundings, atmosphere, or background with key elements and visual style]. The lighting is [description of the lighting setup, highlighting the mood or dramatic effect]. The composition is [how the subject is placed in the frame, perspective, and any dynamic elements involved]. The title '${userText}' is placed [description of how the title is incorporated into the image, e.g., in bold typography or a creative arrangement]. The style is [description of the artistic style, such as realism, cyberpunk, fantasy, etc.], evoking a sense of [mood or emotion]
-               Title Input: "${userText}"`
+              content: `A highly detailed and vivid thumbnail illustration featuring [main subject description]. The main subject is [detailed description of the subject, including physical features, attire, and key actions or postures]. The environment is [description of the surroundings, atmosphere, or background with key elements and visual style]. The lighting is [description of the lighting setup, highlighting the mood or dramatic effect]. The composition is [how the subject is placed in the frame, perspective, and any dynamic elements involved]. The title '${userText}' is placed [description of how the title is incorporated into the image, e.g., in bold typography or a creative arrangement]. The style is [description of the artistic style, such as realism, cyberpunk, fantasy, etc.], evoking a sense of [mood or emotion]. Strictly ensure the total response does not exceed 1900 characters while maintaining all requested details. Title Input: "${userText}"`
           }
       ],
       

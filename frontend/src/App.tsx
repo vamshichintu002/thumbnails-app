@@ -9,6 +9,7 @@ import { Testimonials } from './components/Testimonials';
 import { Pricing } from './components/Pricing';
 import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
+import { ThumbnailShowcase } from './components/ThumbnailShowcase';
 import Dashboard  from './pages/Dashboard';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -55,6 +56,7 @@ function AppRoutes() {
             <NavBarDemo />
             <main className="flex-grow">
               <Hero />
+              <ThumbnailShowcase />
               <Features />
               <Statistics />
               <PlatformSupport />
