@@ -45,9 +45,7 @@ export function Footer() {
               <a href="#faq" className="block transition-colors hover:text-blue-400">
                 FAQ
               </a>
-              <a href="#blog" className="block transition-colors hover:text-blue-400">
-                Blog
-              </a>
+             
             </nav>
           </div>
 
@@ -55,10 +53,9 @@ export function Footer() {
           <div>
             <h3 className="mb-4 text-lg font-semibold">Contact Us</h3>
             <address className="space-y-2 text-sm not-italic text-muted-foreground">
-              <p>Thumbnails Labs Headquarters</p>
-              <p>123 Creator Street</p>
-              <p>Content City, CC 12345</p>
-              <p>Email: support@thumbnailslabs.com</p>
+              
+  
+              <p>Email: thumbnailslabs@gmail.com</p>
             </address>
           </div>
 

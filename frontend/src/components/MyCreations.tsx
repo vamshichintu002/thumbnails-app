@@ -274,15 +274,39 @@ export const MyCreations: React.FC<MyCreationsProps> = ({
                       }}
                     />
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onCloseZoom();
-                    }}
-                    className="absolute -top-4 -right-4 p-2 rounded-full bg-black/80 text-white/80 hover:text-white hover:bg-black shadow-lg hover:shadow-xl transition-all duration-200 border border-white/10"
-                  >
-                    <X className="h-6 w-6" />
-                  </button>
+                  <div className="absolute -top-4 -right-4 flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDownload(zoomedImage.url, `thumbnail-${zoomedImage.title}.png`);
+                      }}
+                      className="p-2 rounded-full bg-blue-600/90 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-200 border border-white/10 flex items-center justify-center"
+                    >
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        className="h-6 w-6" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={2} 
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCloseZoom();
+                      }}
+                      className="p-2 rounded-full bg-black/80 text-white/80 hover:text-white hover:bg-black shadow-lg hover:shadow-xl transition-all duration-200 border border-white/10"
+                    >
+                      <X className="h-6 w-6" />
+                    </button>
+                  </div>
                   <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-center whitespace-nowrap">
                     <p className="text-white/90 text-sm bg-black/50 backdrop-blur-sm rounded-full py-2 px-6 shadow-lg border border-white/10">
                       Generated on {zoomedImage.title}

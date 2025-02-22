@@ -106,7 +106,10 @@ export function FAQ() {
           <p className="text-muted-foreground mb-4">
             Our support team is here to help you 24/7
           </p>
-          <button className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+          <button 
+            onClick={() => window.location.href = 'mailto:thumbnailslabs@gmail.com'}
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+          >
             Contact Support
           </button>
         </motion.div>
