@@ -13,6 +13,9 @@ import { ThumbnailShowcase } from './components/ThumbnailShowcase';
 import Dashboard  from './pages/Dashboard';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import TermsConditions from './pages/TermsConditions';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import RefundPolicy from './pages/RefundPolicy';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ProfileProvider } from './contexts/ProfileContext';
 
@@ -48,6 +51,18 @@ function AppRoutes() {
       <Route 
         path="/dashboard" 
         element={user ? <Dashboard /> : <Navigate to="/login" replace />} 
+      />
+      <Route
+        path="/terms"
+        element={<TermsConditions />}
+      />
+      <Route
+        path="/privacy-policy"
+        element={<PrivacyPolicy />}
+      />
+      <Route
+        path="/refund-policy"
+        element={<RefundPolicy />}
       />
       <Route 
         path="/" 

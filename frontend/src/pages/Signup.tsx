@@ -101,7 +101,7 @@ export default function Signup() {
             <p className="text-xs text-white/40 whitespace-nowrap">
               By continuing, you agree to our{' '}
               <a 
-                href="/terms-conditions.html" 
+                href="/terms" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-400 hover:text-blue-300 transition-colors"
@@ -110,7 +110,7 @@ export default function Signup() {
               </a>
               {' '}and{' '}
               <a 
-                href="/privacy-policy.html" 
+                href="/privacy-policy" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-400 hover:text-blue-300 transition-colors"

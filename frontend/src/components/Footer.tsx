@@ -87,14 +87,14 @@ export function Footer() {
             &copy; 2024 Thumbnails Labs. All rights reserved.
           </p>
           <nav className="flex gap-4 text-sm">
-            <a href="#privacy" className="transition-colors hover:text-blue-400">
+            <a href="/privacy-policy" className="transition-colors hover:text-blue-400">
               Privacy Policy
             </a>
-            <a href="#terms" className="transition-colors hover:text-blue-400">
+            <a href="/terms" className="transition-colors hover:text-blue-400">
               Terms of Service
             </a>
-            <a href="#cookies" className="transition-colors hover:text-blue-400">
-              Cookie Settings
+            <a href="/refund-policy" className="transition-colors hover:text-blue-400">
+              Refund Policy
             </a>
           </nav>
         </div>

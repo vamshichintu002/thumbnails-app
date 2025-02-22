@@ -127,14 +127,14 @@ export const MyCreations: React.FC<MyCreationsProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">My Creations</h2>
-        <div className="flex items-center gap-3">
-          <div className="relative">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 mb-6 px-4 sm:px-0">
+        <h2 className="text-xl sm:text-2xl font-bold">My Creations</h2>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="relative flex-1 sm:flex-auto">
             <button 
               onClick={() => setShowFilters(!showFilters)}
               className={cn(
-                "px-4 py-2 rounded-lg border transition-colors text-sm flex items-center gap-2",
+                "w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg border transition-colors text-sm flex items-center justify-center sm:justify-start gap-2",
                 hasActiveFilters 
                   ? "border-[#3749be] text-[#3749be]" 
                   : "border-white/10 text-white hover:border-[#3749be]"
@@ -153,7 +153,7 @@ export const MyCreations: React.FC<MyCreationsProps> = ({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 10 }}
-                  className="absolute right-0 mt-2 w-64 rounded-xl bg-white/5 backdrop-blur-lg border border-white/10 shadow-xl z-10"
+                  className="fixed sm:absolute left-0 right-0 sm:left-auto sm:right-0 top-[4.5rem] sm:top-full mt-0 sm:mt-2 mx-0 sm:mx-0 w-full sm:w-64 rounded-none sm:rounded-xl bg-white/5 backdrop-blur-lg border-t border-b sm:border border-white/10 shadow-xl z-50"
                 >
                   <div className="p-4 space-y-4">
                     {/* Generation Type Filter */}
@@ -163,7 +163,10 @@ export const MyCreations: React.FC<MyCreationsProps> = ({
                         {filterTypes.map((type) => (
                           <button
                             key={type.value}
-                            onClick={() => setSelectedType(type.value)}
+                            onClick={() => {
+                              setSelectedType(type.value);
+                              setShowFilters(false); // Close dropdown after selection on mobile
+                            }}
                             className={cn(
                               "px-3 py-1.5 rounded-lg text-xs transition-colors",
                               selectedType === type.value
@@ -180,7 +183,10 @@ export const MyCreations: React.FC<MyCreationsProps> = ({
                     {/* Clear Filters */}
                     {hasActiveFilters && (
                       <button
-                        onClick={() => setSelectedType('all')}
+                        onClick={() => {
+                          setSelectedType('all');
+                          setShowFilters(false); // Close dropdown after clearing on mobile
+                        }}
                         className="w-full px-3 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-white/80 transition-colors flex items-center justify-center gap-2"
                       >
                         <X className="w-3 h-3" />
@@ -195,7 +201,7 @@ export const MyCreations: React.FC<MyCreationsProps> = ({
           
           <button 
             onClick={onNewThumbnail}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+            className="flex-1 sm:flex-auto px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-sm sm:text-base font-medium whitespace-nowrap"
           >
             New Thumbnail
           </button>
@@ -231,7 +237,7 @@ export const MyCreations: React.FC<MyCreationsProps> = ({
         </div>
       ) : (
         <>
-          <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4">
+          <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 px-4 sm:px-0">
             {filteredGenerations.map((generation) => (
               <GenerationItem
                 key={generation.id}

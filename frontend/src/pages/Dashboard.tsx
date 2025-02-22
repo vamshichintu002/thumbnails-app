@@ -442,16 +442,18 @@ export default function Dashboard() {
                 >
                   thumbnailslabs.com
                 </a>
-                <p className="text-white/80 text-base md:text-lg leading-relaxed max-w-2xl">
-                  Transform your content with our AI-powered thumbnail generator. Choose from three powerful options:
-                  <span className="block mt-3 md:mt-2 flex flex-row items-center justify-start gap-2 flex-wrap text-xs md:text-sm">
-                    <span className="inline-flex items-center text-blue-400 whitespace-nowrap">• Text to Thumbnail</span>
-                    <span className="inline-block mx-1 text-white/40">|</span>
-                    <span className="inline-flex items-center text-purple-400 whitespace-nowrap">• Face to Thumbnail</span>
-                    <span className="inline-block mx-1 text-white/40">|</span>
-                    <span className="inline-flex items-center text-green-400 whitespace-nowrap">• YouTube to Thumbnail</span>
-                  </span>
-                </p>
+                <p className="text-white/80 text-base md:text-lg leading-relaxed max-w-2xl text-center md:text-left">
+                Transform your content with our <span className="text-white font-semibold">AI-powered thumbnail generator.</span> <br className="hidden md:block" />
+                Choose from three powerful options:
+                <span className="block mt-4 md:mt-3 flex flex-wrap items-center justify-center md:justify-start gap-3 text-sm md:text-base">
+                  <span className="inline-flex items-center text-blue-400 whitespace-nowrap">• Text to Thumbnail</span>
+                  <span className="hidden md:inline-block mx-1 text-white/40">|</span>
+                  <span className="inline-flex items-center text-purple-400 whitespace-nowrap">• Face to Thumbnail</span>
+                  <span className="hidden md:inline-block mx-1 text-white/40">|</span>
+                  <span className="inline-flex items-center text-green-400 whitespace-nowrap">• YouTube to Thumbnail</span>
+                </span>
+              </p>
+
               </div>
 
               {/* Generation Type Selector */}
@@ -501,17 +503,7 @@ export default function Dashboard() {
                     <textarea
                       value={imageText}
                       onChange={(e) => setImageText(e.target.value)}
-                      placeholder={`Example Format:
-
-Video Topic: Epic Space Battle
-
-Thumbnail Style: Hyper-realistic, cinematic, dramatic lighting
-
-Main Subjects: A heavily armed man engaging in combat with multiple alien fighters. The main spaceship should be centered, sleek, and clearly visible.
-
-Text Ideas: "Space Battle!" "Chaos in the Cosmos"
-
-Additional User Description: Explosions, laser fire, nebulae in the background, sense of speed and motion, feeling of intense conflict.`}
+                      placeholder={`Example Title: The Future of AI: 2025 and Beyond`}
                       className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors min-h-[100px] resize-y"
                       style={{ 
                         overflowY: 'auto',
