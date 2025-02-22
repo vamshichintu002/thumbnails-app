@@ -7,7 +7,7 @@ const exampleThumbnails = [
     title: ""
   },
   {
-    imageUrl: "https://ujsjwovfdifsdavzwiec.supabase.co/storage/v1/object/public/Image-share//cZ-BL8xKTYmZf1KZWXEg9w.webp",
+    imageUrl: "https://ujsjwovfdifsdavzwiec.supabase.co/storage/v1/object/public/Image-share//W7gell0oQkWaw4RmvV4PcA.jpeg",
     title: ""
   },
   {
