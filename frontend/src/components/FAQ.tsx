@@ -5,28 +5,32 @@ import { cn } from '../lib/utils';
 
 const faqs = [
   {
-    question: "How does Thumbnails Labs generate thumbnails?",
-    answer: "Thumbnails Labs uses advanced AI algorithms to analyze your video title, content, and style preferences to generate eye-catching thumbnails. Our system understands context and creates visually appealing designs that match your content's theme."
+    question: "What is Thumbnail Labs?",
+    answer: "Thumbnail Labs is an AI-powered tool that helps content creators design high-quality YouTube thumbnails quickly and easily."
   },
   {
-    question: "Can I customize the generated thumbnails?",
-    answer: "Yes! After AI generation, you can fully customize your thumbnails using our editor. Adjust colors, text, layouts, and add your own elements to make them perfectly match your brand."
+    question: "Why choose Thumbnail Labs over Midjourney or DALL·E?",
+    answer: "It is the only AI generator trained specifically for YouTube thumbnails, ensuring precise and optimized results."
   },
   {
-    question: "What image formats and sizes are supported?",
-    answer: "We support all major social media platforms with their recommended sizes: YouTube (1280x720), Instagram (1080x1080, 1080x1350), TikTok (1080x1920), and more. Images are exported in high-quality PNG or JPG formats."
+    question: "How can I re-create thumbnails from video links?",
+    answer: "Simply paste a YouTube video link, and our AI will generate a new thumbnail in seconds."
   },
   {
-    question: "How many thumbnails can I generate?",
-    answer: "The number of thumbnails depends on your plan. Free trial users get 5 thumbnails, Starter plan includes 100 per month, while Creator and Agency plans offer unlimited generations."
+    question: "Can I generate thumbnails using my face or AI-generated faces?",
+    answer: "Yes! You can upload your face or use AI-generated faces that match your content's style."
   },
   {
-    question: "Is there a refund policy?",
-    answer: "Yes, we offer a 14-day money-back guarantee for all paid plans. If you're not satisfied with our service, simply contact our support team for a full refund."
+    question: "Can I generate thumbnails from just a video title?",
+    answer: "Yes, enter the YouTube video title, and our AI will create a thumbnail instantly."
   },
   {
-    question: "Do you offer team collaboration features?",
-    answer: "Yes! Our Agency plan includes team collaboration features, allowing multiple team members to work together, share assets, and maintain brand consistency across all thumbnails."
+    question: "Can I purchase extra credits if I run out?",
+    answer: "Yes, additional credits can be purchased anytime."
+  },
+  {
+    question: "Do credits expire, or can they roll over?",
+    answer: "Credits reset on renewal, but you can enable 'Credit Rollover' to keep unused credits."
   }
 ];
 
