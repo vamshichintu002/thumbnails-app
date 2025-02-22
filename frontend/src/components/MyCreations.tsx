@@ -262,15 +262,18 @@ export const MyCreations: React.FC<MyCreationsProps> = ({
                   exit={{ scale: 0.9, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <img
-                    src={zoomedImage.url}
-                    alt={zoomedImage.title}
-                    className="max-h-[85vh] max-w-[85vw] w-auto h-auto object-contain rounded-lg shadow-2xl"
-                    style={{ 
-                      minHeight: '200px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.2)'
-                    }}
-                  />
+                  <div className="relative h-[85vh] flex items-center justify-center">
+                    <img
+                      src={zoomedImage.url}
+                      alt={zoomedImage.title}
+                      className="max-h-full w-auto h-auto object-contain rounded-lg shadow-2xl"
+                      style={{ 
+                        minHeight: '200px',
+                        maxWidth: '85vw',
+                        backgroundColor: 'rgba(0, 0, 0, 0.2)'
+                      }}
+                    />
+                  </div>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -278,9 +281,7 @@ export const MyCreations: React.FC<MyCreationsProps> = ({
                     }}
                     className="absolute -top-4 -right-4 p-2 rounded-full bg-black/80 text-white/80 hover:text-white hover:bg-black shadow-lg hover:shadow-xl transition-all duration-200 border border-white/10"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <X className="h-6 w-6" />
                   </button>
                   <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-center whitespace-nowrap">
                     <p className="text-white/90 text-sm bg-black/50 backdrop-blur-sm rounded-full py-2 px-6 shadow-lg border border-white/10">

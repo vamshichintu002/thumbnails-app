@@ -21,6 +21,7 @@ export default {
         'marquee': 'marquee var(--duration) linear infinite',
         'marquee-reverse': 'marquee-reverse var(--duration) linear infinite',
         'expand-from-center': 'expand-from-center var(--duration) linear infinite',
+        'blob': 'blob 7s infinite',
       },
       keyframes: {
         'skew-scroll': {
@@ -44,7 +45,21 @@ export default {
           '15%': { transform: 'translateX(0) scale(1)', opacity: '1' },
           '85%': { transform: 'translateX(0) scale(1)', opacity: '1' },
           '100%': { transform: 'translateX(-50%) scale(0.5)', opacity: '0' }
-        }
+        },
+        blob: {
+          '0%': {
+            transform: 'translate(0px, 0px) scale(1)',
+          },
+          '33%': {
+            transform: 'translate(30px, -50px) scale(1.1)',
+          },
+          '66%': {
+            transform: 'translate(-20px, 20px) scale(0.9)',
+          },
+          '100%': {
+            transform: 'translate(0px, 0px) scale(1)',
+          },
+        },
       },
       maxWidth: {
         'container': '1280px',

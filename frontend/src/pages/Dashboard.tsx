@@ -23,6 +23,7 @@ import { UserProfile } from '../components/UserProfile';
 import { MyCreations } from '../components/MyCreations';
 import { Subscription } from '../components/Subscription';
 import toast, { Toaster } from 'react-hot-toast';
+import LoadingModal from '../components/ui/LoadingModal';
 
 type GenerationType = 'title' | 'image' | 'youtube' | 'custom';
 type AspectRatio = '16:9' | '9:16';
@@ -1262,27 +1263,29 @@ Additional User Description: Explosions, laser fire, nebulae in the background, 
             <div className="grid grid-cols-1 gap-4 md:gap-6">
               {generatedImages.map((imageUrl, index) => (
                 <div key={index} className="relative group rounded-xl overflow-hidden bg-gradient-to-r from-blue-500/10 to-purple-500/10 p-1">
-                  <div className="relative aspect-video rounded-lg overflow-hidden">
+                  <div className="relative h-[70vh] rounded-lg overflow-hidden">
                     <img
                       src={imageUrl}
                       alt={`Generated thumbnail ${index + 1}`}
-                      className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-300"
+                      style={{
+                        backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                      }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="absolute bottom-0 left-0 right-0 p-4 flex justify-center space-x-4">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDownload(imageUrl, `thumbnail-${index + 1}.png`);
-                          }}
-                          className="px-4 md:px-6 py-2 md:py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-lg shadow-blue-600/20 transition-all duration-200 flex items-center space-x-2 transform hover:-translate-y-0.5"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                          </svg>
-                          <span>Download</span>
-                        </button>
-                      </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 right-0 p-4 flex justify-center space-x-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownload(imageUrl, `thumbnail-${index + 1}.png`);
+                        }}
+                        className="px-4 md:px-6 py-2 md:py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-lg shadow-blue-600/20 transition-all duration-200 flex items-center space-x-2 transform hover:-translate-y-0.5"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                        </svg>
+                        <span>Download</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1310,7 +1313,8 @@ Additional User Description: Explosions, laser fire, nebulae in the background, 
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-black text-white">
+      <LoadingModal isOpen={isGenerating} />
       <Toaster />
       {/* Side Menu */}
       <div className="fixed top-0 bottom-0 left-0 z-50 w-64 bg-background/30 backdrop-blur-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 hidden lg:block">

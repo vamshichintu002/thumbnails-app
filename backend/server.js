@@ -30,6 +30,7 @@ app.use(cors({
       'https://www.thumbnailslabs.com',
       'https://thumbnailslabs.com',
       'https://frontend-f1bzzsf0m-princechintu70-yahoocoms-projects.vercel.app',
+      'http://localhost:5173',
       'https://frontend-kohl-phi.vercel.app'
     ];
     
