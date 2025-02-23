@@ -22,7 +22,7 @@ import { useNavigate } from 'react-router-dom';
 import { UserProfile } from '../components/UserProfile';
 import { MyCreations } from '../components/MyCreations';
 import { Subscription } from '../components/Subscription';
-import toast, { Toaster } from 'react-hot-toast';
+import { toast } from 'sonner';
 import LoadingModal from '../components/ui/LoadingModal';
 
 type GenerationType = 'title' | 'image' | 'youtube' | 'custom';
@@ -1342,7 +1342,6 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-black text-white">
       <LoadingModal isOpen={isGenerating} />
-      <Toaster />
       {/* Side Menu */}
       <div className="fixed top-0 bottom-0 left-0 z-50 w-64 bg-background/30 backdrop-blur-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 hidden lg:block">
         <div className="h-full flex flex-col p-4 pt-8">
