@@ -123,11 +123,11 @@ export function Hero() {
             </div>
 
             {/* Right Column - Video */}
-            <div className="relative lg:mr-8 mt-8 lg:mt-0 overflow-hidden rounded-2xl border border-white/10 shadow-2xl group">
+            <div className="relative mt-8 lg:mt-0 overflow-hidden rounded-2xl border border-white/10 shadow-2xl group w-full">
               <div className="relative w-full aspect-video">
                 <iframe
-                  src="https://player.vimeo.com/video/164916743?background=1&autoplay=1&loop=1&byline=0&title=0&controls=1&transparent=0&dnt=1"
-                  className="absolute inset-0 w-full h-full scale-110 transition-transform duration-300 group-hover:scale-105 video-player-iframe"
+                  src="https://player.vimeo.com/video/1059410338?background=1&autoplay=1&loop=1&byline=0&title=0&controls=1&transparent=0&dnt=1"
+                  className="absolute inset-0 w-full h-full video-player-iframe"
                   frameBorder="0"
                   allow="autoplay; fullscreen"
                   title="Promotional Video"
