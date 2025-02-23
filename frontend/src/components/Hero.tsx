@@ -4,15 +4,92 @@ import { Play, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Vimeo from '@vimeo/player';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import confetti from 'canvas-confetti';
 
 export function Hero() {
   const navigate = useNavigate();
   const [displayText, setDisplayText] = useState('');
   const [currentOptionIndex, setCurrentOptionIndex] = useState(0);
   const [isTyping, setIsTyping] = useState(true);
-  
   const options = ['Your own face', 'Title to Thumbnail', 'Thumbnail to Thumbnail'];
-  
+
+  useEffect(() => {
+    // Show launch offer toast
+    const timer = setTimeout(() => {
+      const toastId = toast(
+        <div className="flex flex-col gap-3 min-w-[300px]">
+          {/* Header */}
+          <div className="flex flex-col">
+            <div className="inline-flex items-center gap-2 text-lg font-semibold">
+              <span className="text-xl">🎉</span>
+              <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                LAUNCH OFFER!
+              </span>
+            </div>
+            <p className="text-sm text-gray-100/90 mt-1">
+              50% OFF on all plans
+            </p>
+          </div>
+
+          {/* Coupon Section */}
+          <div className="flex items-center justify-between bg-black/20 rounded-lg p-3 backdrop-blur-sm">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 bg-indigo-500/10 rounded-md">
+                <svg className="w-4 h-4 text-indigo-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20.91 8.84 8.56 21.16a4.25 4.25 0 0 1-6.29-5.72L14.84 2.84a4.25 4.25 0 0 1 6.29 5.72"></path>
+                  <path d="M6 19 2 23"></path>
+                  <path d="m2 6 20 12"></path>
+                </svg>
+              </div>
+              <code className="text-base font-mono font-bold text-indigo-300 tracking-wide">
+                WELCOME50
+              </code>
+            </div>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText('WELCOME50');
+                confetti({
+                  particleCount: 100,
+                  spread: 70,
+                  origin: { y: 0.9, x: 0.9 },
+                  colors: ['#818CF8', '#C7D2FE', '#E0E7FF']
+                });
+                toast.dismiss(toastId);
+                toast.success('Coupon code copied!', {
+                  duration: 2000,
+                  position: window.innerWidth >= 640 ? 'bottom-right' : 'bottom-center',
+                  className: 'bg-green-500/10 backdrop-blur-md border border-green-500/20 text-green-400',
+                });
+              }}
+              className="px-3.5 py-2 text-xs font-medium bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-md transition-colors flex items-center gap-1.5"
+            >
+              Copy
+              <svg className="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+              </svg>
+            </button>
+          </div>
+
+          {/* Price Section */}
+          <div className="flex items-center justify-center">
+            <p className="text-sm text-gray-400/90">
+              Starting at just <span className="text-indigo-400 font-semibold">$5</span>
+            </p>
+          </div>
+        </div>,
+        {
+          duration: 0,
+          position: window.innerWidth >= 640 ? 'bottom-right' : 'bottom-center',
+          className: 'bg-gray-900/95 backdrop-blur-md border border-white/10 p-4 shadow-xl',
+        }
+      );
+    }, 1000); // Slightly longer delay to ensure the page is fully loaded
+
+    return () => clearTimeout(timer);
+  }, []); // Only show once when component mounts
+
   useEffect(() => {
     const baseText = 'Generate Thumbnails using ';
     let currentText = baseText;
@@ -100,15 +177,6 @@ export function Hero() {
                 >
                   Try for Free
                   <ArrowRight className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
-                </button>
-                
-                <button 
-                  onClick={() => navigate('/login')}
-                  className="px-4 py-2 lg:px-6 lg:py-3 text-sm lg:text-base bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-full font-semibold border border-white/10 flex items-center gap-2 transition-all"
-                >
-                  <Play className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
-                  Watch Demo
-                  <span className="text-xs lg:text-sm text-gray-400">68 sec</span>
                 </button>
               </div>
               <p className="text-sm text-gray-400 -mt-6 mb-10">No credit card required</p>

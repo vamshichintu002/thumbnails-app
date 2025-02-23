@@ -18,6 +18,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import RefundPolicy from './pages/RefundPolicy';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ProfileProvider } from './contexts/ProfileContext';
+import { Toaster } from './components/ui/sonner-toast';
 
 function LoadingSpinner() {
   return (
@@ -89,15 +90,19 @@ function AppRoutes() {
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <ProfileProvider>
-          <div className="min-h-screen bg-background">
+    <AuthProvider>
+      <ProfileProvider>
+        <Router>
+          <React.Suspense fallback={<LoadingSpinner />}>
             <AppRoutes />
-          </div>
-        </ProfileProvider>
-      </AuthProvider>
-    </Router>
+          </React.Suspense>
+          <Toaster 
+            richColors
+            closeButton
+          />
+        </Router>
+      </ProfileProvider>
+    </AuthProvider>
   );
 }
 
