@@ -46,6 +46,7 @@ export default function Dashboard() {
   const [youtubeError, setYoutubeError] = useState<string | null>(null);
   const [generationType, setGenerationType] = useState<GenerationType>('title');
   const [selectedRatio, setSelectedRatio] = useState<AspectRatio>('16:9');
+  const [includeTitleInThumbnail, setIncludeTitleInThumbnail] = useState<boolean>(true);
   const [zoomedImage, setZoomedImage] = useState<{ url: string; title: string } | null>(null);
   const [user, setUser] = useState<any>(null);
   const [generationOption, setGenerationOption] = useState<'style' | 'recreate'>('style');
@@ -485,14 +486,47 @@ export default function Dashboard() {
               {/* Generation Options */}
               {generationType === 'title' && (
                 <div className="space-y-4">
-                  <label className="block text-sm font-medium text-white/80">Video Title</label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Enter your prompt"
-                    className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                  />
+                  <div className="space-y-2">
+                    <label htmlFor="title" className="block text-sm font-medium text-white/80">
+                      Enter your video title
+                    </label>
+                    <input
+                      type="text"
+                      id="title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-white placeholder-white/50"
+                      placeholder="Enter your video title"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-white/80">
+                      Do you want title in the thumbnail?
+                    </label>
+                    <div className="flex space-x-4">
+                      <label className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          className="form-radio"
+                          name="titleOption"
+                          checked={includeTitleInThumbnail}
+                          onChange={() => setIncludeTitleInThumbnail(true)}
+                        />
+                        <span className="ml-2">Yes</span>
+                      </label>
+                      <label className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          className="form-radio"
+                          name="titleOption"
+                          checked={!includeTitleInThumbnail}
+                          onChange={() => setIncludeTitleInThumbnail(false)}
+                        />
+                        <span className="ml-2">No</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -504,7 +538,7 @@ export default function Dashboard() {
                       value={imageText}
                       onChange={(e) => setImageText(e.target.value)}
                       placeholder={`Example Title: The Future of AI: 2025 and Beyond`}
-                      className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors min-h-[100px] resize-y"
+                      className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-white placeholder-white/50"
                       style={{ 
                         overflowY: 'auto',
                         lineHeight: '1.5'
@@ -653,7 +687,7 @@ export default function Dashboard() {
                           value={title}
                           onChange={(e) => setTitle(e.target.value)}
                           placeholder="Enter your video title"
-                          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-white placeholder-white/50"
                         />
                         <p className="mt-1 text-xs text-white/60">
                           This will help generate a more relevant thumbnail
@@ -668,7 +702,7 @@ export default function Dashboard() {
                           value={youtubeUrl}
                           onChange={(e) => setYoutubeUrl(e.target.value)}
                           placeholder="Enter YouTube video URL"
-                          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-white placeholder-white/50"
                         />
                         {youtubeError && (
                           <div className="flex items-center gap-2 text-red-400 text-sm mt-1">
@@ -1117,6 +1151,7 @@ export default function Dashboard() {
           referenceImageUrl: selectedExistingImage,
           aspectRatio: selectedRatio,
           gender: selectedGender,
+          includeTitleInThumbnail,
         }),
       });
 

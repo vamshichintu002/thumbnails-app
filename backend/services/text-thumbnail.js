@@ -3,8 +3,18 @@ import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 
 dotenv.config();
-async function enhancePromptWithGroq(userText) {
+
+// Prompt templates for different thumbnail styles
+const withTitlePrompt = (userText) => `Generate a detailed YouTube thumbnail GENERATE PROMPT based on the following video title: ${userText}. Instructions: Title Integration: Ensure the video title is prominently featured in a bold, dynamic font that matches the theme of the content. Instead of just plain white text, the font should be stylized with colors, shadows, gradients, or textures that enhance readability and visual impact text at the top of the thumbnail. If the topic is intense, use metallic, grunge, or fiery effects; for tech-related content, use glowing neon or futuristic fonts; for mystery or documentary themes, use bold serif or stencil fonts with a cinematic effect. fmain - Central Figure: Include a central figure in a confident and engaging pose, interacting with relevant objects or technology related to the video title. Background Elements: Design a vibrant background with a gradient transitioning from one color to another, incorporating tech-inspired patterns, icons, and subtle glowing effects that relate to the video title. Visual Accents: Include optional visual accents like emojis, icons, or glowing elements to enhance the overall theme and energy of the thumbnail. Professional Layout: Ensure the layout is clean, balanced, and visually appealing, with a focus on readability and professionalism. DONT INCUDE " The design will be optimized for YouTube thumbnail dimensions and will not exceed 6000 characters." IN OUTPUT Strictly ensure that the final output does not exceed 6000 characters while following these instructions precisely`;
+
+const withoutTitlePrompt = (userText) => `Generate a high-quality, detailed thumbnail based on the following video title: "${userText}". The thumbnail should not contain any text. The central figure must be realistic and high-quality, posed confidently and interacting with relevant objects or technology related to the video title. Avoid illustrations or cartoon-like visuals. The background should be vibrant and dynamic, with a smooth gradient transition between colors and no empty spaces at the top or bottom. Integrate cinematic effects, tech-inspired patterns, glowing elements, or relevant thematic details such as explosions, digital circuits, or motion blur to enhance depth and engagement. Include optional visual highlights like glowing effects, relevant emojis, or icons that reinforce the video theme without overpowering the main subject. Maintain a clean, professional layout where all elements (figure, background, accents) fit perfectly without blank space. The design should be visually striking, maximizing space usage efficiently while keeping a high level of realism and impact. Strictly ensure that the final output does not exceed 6000 characters while following these instructions precisely.`;
+
+async function enhancePromptWithGroq(userText, includeTitleInThumbnail) {
   try {
+    const promptTemplate = includeTitleInThumbnail 
+      ? withTitlePrompt(userText)
+      : withoutTitlePrompt(userText);
+
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -12,18 +22,17 @@ async function enhancePromptWithGroq(userText) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile', 
+        model: 'llama-3.3-70b-versatile',
         messages: [
           {
-              role: 'system',
-              content: ' '
+            role: 'system',
+            content: ' '
           },
           {
-              role: 'user',
-              content: `Generate a detailed YouTube thumbnail GENERATE PROMPT based on the following video title: ${userText}. Instructions: Title Integration: Ensure the video title is prominently featured in a bold, dynamic font that matches the theme of the content. Instead of just plain white text, the font should be stylized with colors, shadows, gradients, or textures that enhance readability and visual impact text at the top of the thumbnail. If the topic is intense, use metallic, grunge, or fiery effects; for tech-related content, use glowing neon or futuristic fonts; for mystery or documentary themes, use bold serif or stencil fonts with a cinematic effect. fmain - Central Figure: Include a central figure in a confident and engaging pose, interacting with relevant objects or technology related to the video title. Background Elements: Design a vibrant background with a gradient transitioning from one color to another, incorporating tech-inspired patterns, icons, and subtle glowing effects that relate to the video title. Visual Accents: Include optional visual accents like emojis, icons, or glowing elements to enhance the overall theme and energy of the thumbnail. Professional Layout: Ensure the layout is clean, balanced, and visually appealing, with a focus on readability and professionalism. DONT INCUDE " The design will be optimized for YouTube thumbnail dimensions (1280 x 720 pixels) and will not exceed 6000 characters." IN OUTPUT Strictly ensure that the final output does not exceed 6000 characters while following these instructions precisely.`
+            role: 'user',
+            content: promptTemplate
           }
-      ],
-      
+        ],
         temperature: 1,
         max_tokens: 1024,
         top_p: 1,
@@ -64,7 +73,7 @@ async function generateImageWithNebiusAI(prompt, { width, height }, referenceIma
         width,
         height,
         response_extension: "webp",
-        num_inference_steps: 25,
+        num_inference_steps: 30,
         image: referenceImage
       })
     });
@@ -89,7 +98,7 @@ const aspectRatioMap = {
 };
 
 export const TextThumbnailService = {
-  async generateThumbnail(userId, text, aspectRatio = '16:9') {
+  async generateThumbnail(userId, text, aspectRatio = '16:9', includeTitleInThumbnail = true) {
     try {
       // Check if user has enough credits
       const { data: profile, error: profileError } = await supabase
@@ -112,7 +121,7 @@ export const TextThumbnailService = {
       console.log('Generating with input:', { prompt: text, ...dimensions });
 
       // Enhance prompt using Groq
-      const enhancedPrompt = await enhancePromptWithGroq(text);
+      const enhancedPrompt = await enhancePromptWithGroq(text, includeTitleInThumbnail);
 
       // Generate image using Nebius AI
       const result = await generateImageWithNebiusAI(enhancedPrompt, dimensions);

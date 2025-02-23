@@ -25,12 +25,12 @@ const PRICE_IDS = {
     isSubscription: true
   },
   'basic-yearly': { 
-    credits: 250,
+    credits: 3000,
     priceId: process.env.STRIPE_PRICE_BASIC_YEARLY,
     isSubscription: true
   },
   'pro-yearly': { 
-    credits: 500,
+    credits: 6000,
     priceId: process.env.STRIPE_PRICE_PRO_YEARLY,
     isSubscription: true
   },
