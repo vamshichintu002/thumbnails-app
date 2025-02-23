@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
 import { toast } from 'react-hot-toast';
+import { logger } from '../utils/logger';
 
 interface AuthContextType {
   user: User | null;
@@ -27,15 +28,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session: initialSession }, error: sessionError }) => {
       if (mounted) {
         if (sessionError) {
-          console.error('Error getting session:', sessionError);
+          logger.error('Error getting session:', sessionError);
           setError(sessionError.message);
         } else {
           if (initialSession) {
-            console.log('Initial session found:', initialSession.user.email);
-            setSession(initialSession);
             setUser(initialSession.user);
+            setSession(initialSession);
+            logger.log('Initial session found:', initialSession.user.email);
           } else {
-            console.log('No initial session found');
+            setUser(null);
+            setSession(null);
+            logger.log('No initial session found');
           }
         }
         setLoading(false);
@@ -44,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      console.log('Auth state changed:', event, currentSession?.user?.email);
+      logger.log('Auth state changed:', event, currentSession?.user?.email);
       
       if (mounted) {
         if (currentSession) {
@@ -75,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       if (error) throw error;
     } catch (error) {
-      console.error('Error signing in with Google:', error);
+      logger.error('Error signing in with Google:', error);
       toast.error('Failed to sign in with Google');
     } finally {
       setLoading(false);
@@ -91,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setSession(null);
     } catch (error) {
-      console.error('Error signing out:', error);
+      logger.error('Error signing out:', error);
       setError(error instanceof Error ? error.message : 'Sign out failed');
       throw error;
     } finally {

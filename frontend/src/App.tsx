@@ -18,7 +18,8 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import RefundPolicy from './pages/RefundPolicy';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ProfileProvider } from './contexts/ProfileContext';
-import { Toaster } from './components/ui/sonner-toast';
+import { Toaster } from 'react-hot-toast';
+import { logger } from './utils/logger';
 
 function LoadingSpinner() {
   return (
@@ -33,7 +34,7 @@ function LoadingSpinner() {
 
 function AppRoutes() {
   const { user, loading } = useAuth();
-  console.log('AppRoutes - loading:', loading, 'user:', user?.email);
+  logger.log('AppRoutes - loading:', loading, 'user:', user?.email);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -96,11 +97,18 @@ function App() {
           <React.Suspense fallback={<LoadingSpinner />}>
             <AppRoutes />
           </React.Suspense>
-          <Toaster 
-            richColors
-            closeButton
-          />
         </Router>
+        <Toaster 
+          position="top-center"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: 'transparent',
+              boxShadow: 'none',
+              padding: 0,
+            },
+          }}
+        />
       </ProfileProvider>
     </AuthProvider>
   );

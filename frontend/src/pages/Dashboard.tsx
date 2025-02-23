@@ -22,8 +22,9 @@ import { useNavigate } from 'react-router-dom';
 import { UserProfile } from '../components/UserProfile';
 import { MyCreations } from '../components/MyCreations';
 import { Subscription } from '../components/Subscription';
-import toast, { Toaster } from 'react-hot-toast';
+import { showToast } from '../components/ui/custom-toast';
 import LoadingModal from '../components/ui/LoadingModal';
+import { logger } from '../utils/logger';
 
 type GenerationType = 'title' | 'image' | 'youtube' | 'custom';
 type AspectRatio = '16:9' | '9:16';
@@ -85,7 +86,7 @@ export default function Dashboard() {
           });
         }
       } catch (error) {
-        console.error('Error fetching user profile:', error);
+        logger.error('Error fetching user profile:', error);
       }
     };
 
@@ -121,14 +122,14 @@ export default function Dashboard() {
           filter: `id=eq.${user.id}`,
         },
         (payload: any) => {
-          console.log('Credits updated:', payload);
+          logger.log('Credits updated:', payload);
           if (payload.new && typeof payload.new.credits === 'number') {
             setCredits(payload.new.credits);
           }
         }
       )
       .subscribe((status) => {
-        console.log('Credits subscription status:', status);
+        logger.log('Credits subscription status:', status);
       });
 
     // Subscribe to new image generations
@@ -169,7 +170,7 @@ export default function Dashboard() {
         if (error) throw error;
         setUserGenerations(data || []);
       } catch (error) {
-        console.error('Error fetching generations:', error);
+        logger.error('Error fetching generations:', error);
       }
     };
 
@@ -201,7 +202,7 @@ export default function Dashboard() {
       if (error) throw error;
       setAllGenerations(data || []);
     } catch (error) {
-      console.error('Error fetching generations:', error);
+      logger.error('Error fetching generations:', error);
     } finally {
       setIsLoadingGenerations(false);
     }
@@ -218,8 +219,8 @@ export default function Dashboard() {
       if (error) throw error;
       setExistingImages(data || []);
     } catch (err) {
-      console.error('Error fetching images:', err);
-      toast.error('Failed to load existing images');
+      logger.error('Error fetching images:', err);
+      showToast.error('Failed to load existing images');
     }
   };
 
@@ -263,7 +264,7 @@ export default function Dashboard() {
       if (error) throw error;
       navigate('/');
     } catch (error) {
-      console.error('Error logging out:', error);
+      logger.error('Error logging out:', error);
     }
   };
 
@@ -317,31 +318,15 @@ export default function Dashboard() {
       }, ...prevImages]);
 
       // Show success toast
-      toast.success('Image uploaded successfully!', {
-        duration: 3000,
-        position: 'top-center',
-        style: {
-          background: '#070e41',
-          color: '#fff',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-        },
-      });
+      showToast.success('Image uploaded successfully!');
 
       // Clear preview and selected file
       setPreviewImage(null);
       setSelectedFile(null);
 
     } catch (err) {
-      console.error('Upload error:', err);
-      toast.error(err.message || 'Failed to upload image', {
-        duration: 3000,
-        position: 'top-center',
-        style: {
-          background: '#070e41',
-          color: '#fff',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-        },
-      });
+      logger.error('Upload error:', err);
+      showToast.error(err.message || 'Failed to upload image');
     }
   };
 
@@ -382,27 +367,11 @@ export default function Dashboard() {
       setExistingImages(prevImages => prevImages.filter(img => img.id !== imageId));
       
       // Show success message
-      toast.success('Image deleted successfully!', {
-        duration: 3000,
-        position: 'top-center',
-        style: {
-          background: '#070e41',
-          color: '#fff',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-        },
-      });
+      showToast.success('Image deleted successfully!');
 
     } catch (err) {
-      console.error('Delete error:', err);
-      toast.error('Failed to delete image', {
-        duration: 3000,
-        position: 'top-center',
-        style: {
-          background: '#070e41',
-          color: '#fff',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-        },
-      });
+      logger.error('Delete error:', err);
+      showToast.error('Failed to delete image');
     }
   };
 
@@ -991,9 +960,8 @@ export default function Dashboard() {
                       src={zoomedImage.url}
                       alt={zoomedImage.title}
                       className="max-h-[85vh] max-w-[85vw] w-auto h-auto object-contain rounded-lg shadow-2xl"
-                      style={{ 
-                        minHeight: '200px',
-                        backgroundColor: 'rgba(0, 0, 0, 0.2)'
+                      style={{
+                        backgroundColor: 'rgba(0, 0, 0, 0.2)',
                       }}
                     />
                     <div className="absolute top-4 right-4 flex items-center gap-2">
@@ -1064,8 +1032,7 @@ export default function Dashboard() {
             credits={credits}
             isLoadingCredits={isLoadingGenerations}
             onUpgrade={() => {
-              // TODO: Implement upgrade flow
-              console.log('Upgrade to pro clicked');
+              logger.log('Upgrade to pro clicked');
             }}
           />
         );
@@ -1126,12 +1093,12 @@ export default function Dashboard() {
       }
 
       const data = await response.json();
-      console.log('API Response:', data);
+      logger.log('API Response:', data);
 
       // Add the new generation to the list
       setUserGenerations(prev => [data, ...prev]);
       
-      console.log('Generated image URL:', data.output_image_url);
+      logger.log('Generated image URL:', data.output_image_url);
       
       // Set the generated image and show popup
       setGeneratedImages([data.output_image_url]);
@@ -1166,11 +1133,11 @@ export default function Dashboard() {
       }
 
       // Show success message
-      toast.success('Thumbnail generated successfully!');
+      showToast.success('Thumbnail generated successfully!');
 
     } catch (err: any) {
-      console.error('Generation error:', err);
-      toast.error(err.message || 'Failed to generate thumbnail');
+      logger.error('Generation error:', err);
+      showToast.error(err.message || 'Failed to generate thumbnail');
     } finally {
       setIsGenerating(false);
     }
@@ -1190,10 +1157,10 @@ export default function Dashboard() {
       document.body.removeChild(link);
       URL.revokeObjectURL(objectUrl);
 
-      toast.success('Download started!');
+      showToast.success('Download started!');
     } catch (error) {
-      console.error('Download error:', error);
-      toast.error('Failed to download image');
+      logger.error('Download error:', error);
+      showToast.error('Failed to download image');
     }
   };
 
@@ -1307,7 +1274,6 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-black text-white">
       <LoadingModal isOpen={isGenerating} />
-      <Toaster />
       {/* Side Menu */}
       <div className="fixed top-0 bottom-0 left-0 z-50 w-64 bg-background/30 backdrop-blur-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 hidden lg:block">
         <div className="h-full flex flex-col p-4 pt-8">

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { logger } from '../utils/logger';
 
 interface Profile {
   id: string;
@@ -25,7 +26,7 @@ export function UserProfile() {
 
       try {
         setError(null);
-        console.log('Fetching profile for user:', user.id);
+        logger.log('Fetching profile for user:', user.id);
         
         const { data: session } = await supabase.auth.getSession();
         if (!session?.session) {
@@ -39,14 +40,14 @@ export function UserProfile() {
           .single();
 
         if (error) {
-          console.error('Supabase error:', error);
+          logger.error('Supabase error:', error);
           throw error;
         }
 
-        console.log('Profile data:', data);
+        logger.log('Profile data:', data);
         setProfile(data);
       } catch (err) {
-        console.error('Error fetching profile:', err);
+        logger.error('Error fetching profile:', err);
         setError(err instanceof Error ? err.message : 'Error fetching profile');
       } finally {
         setLoading(false);
