@@ -34,7 +34,7 @@ export const ThumbnailShowcase = () => {
         <InfiniteMovingCards
           items={exampleThumbnails}
           direction="right"
-          speed="slow"
+          speed="normal"
           pauseOnHover={true}
         />
       </div>
