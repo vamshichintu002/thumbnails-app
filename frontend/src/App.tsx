@@ -18,7 +18,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import RefundPolicy from './pages/RefundPolicy';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ProfileProvider } from './contexts/ProfileContext';
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from 'sonner';
 import { logger } from './utils/logger';
 
 function LoadingSpinner() {
@@ -99,14 +99,15 @@ function App() {
           </React.Suspense>
         </Router>
         <Toaster 
-          position="top-center"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: 'transparent',
-              boxShadow: 'none',
-              padding: 0,
-            },
+          expand={true}
+          position="bottom-right"
+          richColors
+          closeButton
+          theme="dark"
+          style={{
+            background: 'rgba(0, 0, 0, 0.8)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(8px)'
           }}
         />
       </ProfileProvider>

@@ -22,13 +22,9 @@ import { useNavigate } from 'react-router-dom';
 import { UserProfile } from '../components/UserProfile';
 import { MyCreations } from '../components/MyCreations';
 import { Subscription } from '../components/Subscription';
-import { showToast } from '../components/ui/custom-toast';
+import { toast } from 'sonner';
 import LoadingModal from '../components/ui/LoadingModal';
 import { logger } from '../utils/logger';
-
-type GenerationType = 'title' | 'image' | 'youtube' | 'custom';
-type AspectRatio = '16:9' | '9:16';
-type MenuSection = 'create' | 'creations' | 'subscription' | 'logout';
 
 // YouTube URL regex pattern
 const YOUTUBE_URL_PATTERN = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
@@ -38,15 +34,15 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Dashboard() {
   const [credits, setCredits] = useState<number | null>(null);
-  const [activeSection, setActiveSection] = useState<MenuSection>('create');
+  const [activeSection, setActiveSection] = useState<'create' | 'creations' | 'subscription' | 'logout'>('create');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [imageText, setImageText] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [youtubePreview, setYoutubePreview] = useState<string | null>(null);
   const [youtubeError, setYoutubeError] = useState<string | null>(null);
-  const [generationType, setGenerationType] = useState<GenerationType>('title');
-  const [selectedRatio, setSelectedRatio] = useState<AspectRatio>('16:9');
+  const [generationType, setGenerationType] = useState<'title' | 'image' | 'youtube'>('title');
+  const [selectedRatio, setSelectedRatio] = useState<'16:9' | '9:16'>('16:9');
   const [zoomedImage, setZoomedImage] = useState<{ url: string; title: string } | null>(null);
   const [user, setUser] = useState<any>(null);
   const [generationOption, setGenerationOption] = useState<'style' | 'recreate'>('style');
@@ -220,7 +216,13 @@ export default function Dashboard() {
       setExistingImages(data || []);
     } catch (err) {
       logger.error('Error fetching images:', err);
-      showToast.error('Failed to load existing images');
+      toast.error('Failed to load existing images', {
+        style: {
+          backgroundColor: 'rgba(220, 38, 38, 0.9)',
+          border: '1px solid rgba(220, 38, 38, 0.2)',
+          color: 'white'
+        }
+      });
     }
   };
 
@@ -277,7 +279,13 @@ export default function Dashboard() {
 
   const handleImageUpload = async () => {
     if (!selectedFile || !user) {
-      setError('Please select an image first');
+      toast.error('Please select an image first', {
+        style: {
+          backgroundColor: 'rgba(220, 38, 38, 0.9)',
+          border: '1px solid rgba(220, 38, 38, 0.2)',
+          color: 'white'
+        }
+      });
       return;
     }
 
@@ -318,7 +326,13 @@ export default function Dashboard() {
       }, ...prevImages]);
 
       // Show success toast
-      showToast.success('Image uploaded successfully!');
+      toast.success('Image uploaded successfully!', {
+        style: {
+          backgroundColor: 'rgba(34, 197, 94, 0.9)',
+          border: '1px solid rgba(34, 197, 94, 0.2)',
+          color: 'white'
+        }
+      });
 
       // Clear preview and selected file
       setPreviewImage(null);
@@ -326,7 +340,13 @@ export default function Dashboard() {
 
     } catch (err) {
       logger.error('Upload error:', err);
-      showToast.error(err.message || 'Failed to upload image');
+      toast.error(err.message || 'Failed to upload image', {
+        style: {
+          backgroundColor: 'rgba(220, 38, 38, 0.9)',
+          border: '1px solid rgba(220, 38, 38, 0.2)',
+          color: 'white'
+        }
+      });
     }
   };
 
@@ -367,11 +387,23 @@ export default function Dashboard() {
       setExistingImages(prevImages => prevImages.filter(img => img.id !== imageId));
       
       // Show success message
-      showToast.success('Image deleted successfully!');
+      toast.success('Image deleted successfully!', {
+        style: {
+          backgroundColor: 'rgba(34, 197, 94, 0.9)',
+          border: '1px solid rgba(34, 197, 94, 0.2)',
+          color: 'white'
+        }
+      });
 
     } catch (err) {
       logger.error('Delete error:', err);
-      showToast.error('Failed to delete image');
+      toast.error('Failed to delete image', {
+        style: {
+          backgroundColor: 'rgba(220, 38, 38, 0.9)',
+          border: '1px solid rgba(220, 38, 38, 0.2)',
+          color: 'white'
+        }
+      });
     }
   };
 
@@ -436,7 +468,7 @@ export default function Dashboard() {
                     return (
                       <button
                         key={tab.id}
-                        onClick={() => setGenerationType(tab.id as GenerationType)}
+                        onClick={() => setGenerationType(tab.id as 'title' | 'image' | 'youtube')}
                         className={`relative flex flex-col items-center gap-2 p-4 rounded-xl transition-all duration-300 ${
                           getSelectionClasses(isActive)
                         }`}
@@ -1054,9 +1086,75 @@ export default function Dashboard() {
   };
 
   const handleGenerate = async () => {
-    setError(null);
+    // Validation checks
+    if (!user) {
+      toast.error('Please log in to generate thumbnails', {
+        style: {
+          backgroundColor: 'rgba(220, 38, 38, 0.9)',
+          border: '1px solid rgba(220, 38, 38, 0.2)',
+          color: 'white'
+        }
+      });
+      return;
+    }
+
+    if (credits === 0) {
+      toast.error('You have no credits left. Please upgrade your plan.', {
+        style: {
+          backgroundColor: 'rgba(220, 38, 38, 0.9)',
+          border: '1px solid rgba(220, 38, 38, 0.2)',
+          color: 'white'
+        }
+      });
+      return;
+    }
+
+    // Title validation
+    if (generationType === 'title' && !title.trim()) {
+      toast.error('Please enter a title for your thumbnail', {
+        description: 'A title is required to generate a thumbnail',
+        style: {
+          backgroundColor: 'rgba(220, 38, 38, 0.9)',
+          border: '1px solid rgba(220, 38, 38, 0.2)',
+          color: 'white'
+        }
+      });
+      return;
+    }
+
+    // Image validation
+    if (generationType === 'image') {
+      if (!selectedFile && !selectedExistingImage && !imageText.trim()) {
+        toast.error('Please provide either an image or text description', {
+          description: 'Upload an image or enter a text description to continue',
+          style: {
+            backgroundColor: 'rgba(220, 38, 38, 0.9)',
+            border: '1px solid rgba(220, 38, 38, 0.2)',
+            color: 'white'
+          }
+        });
+        return;
+      }
+    }
+
+    // YouTube validation
+    if (generationType === 'youtube') {
+      if (!youtubeUrl && !title.trim()) {
+        toast.error('Please provide a YouTube URL or title', {
+          description: 'Enter either a YouTube URL or video title to continue',
+          style: {
+            backgroundColor: 'rgba(220, 38, 38, 0.9)',
+            border: '1px solid rgba(220, 38, 38, 0.2)',
+            color: 'white'
+          }
+        });
+        return;
+      }
+    }
+
     setIsGenerating(true);
-    
+    setError(null);
+
     try {
       // Validate reference image for image generation
       if (generationType === 'image' && !selectedExistingImage) {
@@ -1133,11 +1231,24 @@ export default function Dashboard() {
       }
 
       // Show success message
-      showToast.success('Thumbnail generated successfully!');
+      toast.success('Thumbnail generated successfully!', {
+        style: {
+          backgroundColor: 'rgba(34, 197, 94, 0.9)',
+          border: '1px solid rgba(34, 197, 94, 0.2)',
+          color: 'white'
+        }
+      });
 
     } catch (err: any) {
       logger.error('Generation error:', err);
-      showToast.error(err.message || 'Failed to generate thumbnail');
+      toast.error(err.message || 'Failed to generate thumbnail', {
+        description: 'Please check your inputs and try again',
+        style: {
+          backgroundColor: 'rgba(220, 38, 38, 0.9)',
+          border: '1px solid rgba(220, 38, 38, 0.2)',
+          color: 'white'
+        }
+      });
     } finally {
       setIsGenerating(false);
     }
@@ -1157,10 +1268,22 @@ export default function Dashboard() {
       document.body.removeChild(link);
       URL.revokeObjectURL(objectUrl);
 
-      showToast.success('Download started!');
+      toast.success('Download started!', {
+        style: {
+          backgroundColor: 'rgba(34, 197, 94, 0.9)',
+          border: '1px solid rgba(34, 197, 94, 0.2)',
+          color: 'white'
+        }
+      });
     } catch (error) {
       logger.error('Download error:', error);
-      showToast.error('Failed to download image');
+      toast.error('Failed to download image', {
+        style: {
+          backgroundColor: 'rgba(220, 38, 38, 0.9)',
+          border: '1px solid rgba(220, 38, 38, 0.2)',
+          color: 'white'
+        }
+      });
     }
   };
 
@@ -1319,7 +1442,7 @@ export default function Dashboard() {
                     if (item.onClick) {
                       item.onClick();
                     } else {
-                      setActiveSection(item.id as MenuSection);
+                      setActiveSection(item.id as 'create' | 'creations' | 'subscription' | 'logout');
                     }
                   }}
                   className={`
@@ -1365,7 +1488,7 @@ export default function Dashboard() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveSection(item.id as MenuSection)}
+                  onClick={() => setActiveSection(item.id as 'create' | 'creations' | 'subscription' | 'logout')}
                   className="relative -mt-8 p-4 rounded-full bg-gradient-to-tr from-[#3749be] to-[#4d5ed7] text-white shadow-[0_8px_20px_-6px_rgba(55,73,190,0.6)] hover:shadow-[0_8px_24px_-4px_rgba(55,73,190,0.8)] transition-all duration-300 hover:scale-105 flex items-center justify-center"
                 >
                   <Icon className="w-6 h-6" />
@@ -1380,7 +1503,7 @@ export default function Dashboard() {
                   if (item.onClick) {
                     item.onClick();
                   } else {
-                    setActiveSection(item.id as MenuSection);
+                    setActiveSection(item.id as 'create' | 'creations' | 'subscription' | 'logout');
                   }
                 }}
                 className={`

@@ -1,6 +1,6 @@
 import React from 'react';
 import Squares from './Squares';
-import { Play, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Vimeo from '@vimeo/player';
 import { useEffect, useState } from 'react';
@@ -14,9 +14,10 @@ export function Hero() {
   const [isTyping, setIsTyping] = useState(true);
   const options = ['Your own face', 'Title to Thumbnail', 'Thumbnail to Thumbnail'];
 
+  // Show launch offer toast
   useEffect(() => {
-    // Show launch offer toast
-    const timer = setTimeout(() => {
+    // Small delay to ensure component is mounted
+    const showToast = () => {
       const toastId = toast(
         <div className="flex flex-col gap-3 min-w-[300px]">
           {/* Header */}
@@ -56,10 +57,14 @@ export function Hero() {
                   colors: ['#818CF8', '#C7D2FE', '#E0E7FF']
                 });
                 toast.dismiss(toastId);
-                toast.success('Coupon code copied!', {
+                toast.message('Code WELCOME50 copied to clipboard!', {
                   duration: 2000,
-                  position: window.innerWidth >= 640 ? 'bottom-right' : 'bottom-center',
-                  className: 'bg-green-500/10 backdrop-blur-md border border-green-500/20 text-green-400',
+                  icon: '✨',
+                  style: {
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                    border: '1px solid rgba(74, 222, 128, 0.2)',
+                    color: '#4ade80'
+                  }
                 });
               }}
               className="px-3.5 py-2 text-xs font-medium bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-md transition-colors flex items-center gap-1.5"
@@ -81,14 +86,15 @@ export function Hero() {
         </div>,
         {
           duration: 0,
-          position: window.innerWidth >= 640 ? 'bottom-right' : 'bottom-center',
           className: 'bg-gray-900/95 backdrop-blur-md border border-white/10 p-4 shadow-xl',
         }
       );
-    }, 1000); // Slightly longer delay to ensure the page is fully loaded
+    };
 
+    // Show toast after a short delay
+    const timer = setTimeout(showToast, 1500);
     return () => clearTimeout(timer);
-  }, []); // Only show once when component mounts
+  }, []); // Only run once when component mounts
 
   useEffect(() => {
     const baseText = 'Generate Thumbnails using ';
