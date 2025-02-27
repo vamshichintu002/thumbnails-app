@@ -7,6 +7,7 @@ interface MyCreationsProps {
   isLoading: boolean;
   generations: any[];
   onNewThumbnail: () => void;
+  onCustomThumbnail: () => void;
   onZoomImage: (image: { url: string; title: string }) => void;
   onDownload: (url: string, filename: string) => void;
   zoomedImage: { url: string; title: string } | null;
@@ -93,6 +94,7 @@ export const MyCreations: React.FC<MyCreationsProps> = ({
   isLoading,
   generations,
   onNewThumbnail,
+  onCustomThumbnail,
   onZoomImage,
   onDownload,
   zoomedImage,
@@ -129,12 +131,12 @@ export const MyCreations: React.FC<MyCreationsProps> = ({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 mb-6 px-4 sm:px-0">
         <h2 className="text-xl sm:text-2xl font-bold">My Creations</h2>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="relative flex-1 sm:flex-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          <div className="relative w-full sm:w-auto">
             <button 
               onClick={() => setShowFilters(!showFilters)}
               className={cn(
-                "w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg border transition-colors text-sm flex items-center justify-center sm:justify-start gap-2",
+                "w-full px-3 sm:px-4 py-2 rounded-lg border transition-colors text-sm flex items-center justify-center gap-2",
                 hasActiveFilters 
                   ? "border-[#3749be] text-[#3749be]" 
                   : "border-white/10 text-white hover:border-[#3749be]"
@@ -199,12 +201,21 @@ export const MyCreations: React.FC<MyCreationsProps> = ({
             </AnimatePresence>
           </div>
           
-          <button 
-            onClick={onNewThumbnail}
-            className="flex-1 sm:flex-auto px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-sm sm:text-base font-medium whitespace-nowrap"
-          >
-            New Thumbnail
-          </button>
+          <div className="flex flex-row items-stretch gap-2 sm:gap-3">
+            <button 
+              onClick={() => window.open('https://forms.gle/Y7e4sTm49LpGXdWV9', '_blank')}
+              className="flex-1 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-sm sm:text-base font-medium whitespace-nowrap"
+            >
+              Custom Thumbnails
+            </button>
+            
+            <button 
+              onClick={onNewThumbnail}
+              className="flex-1 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-sm sm:text-base font-medium whitespace-nowrap"
+            >
+              New Thumbnail
+            </button>
+          </div>
         </div>
       </div>
 

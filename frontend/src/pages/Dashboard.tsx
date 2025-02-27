@@ -443,17 +443,7 @@ export default function Dashboard() {
                 >
                   thumbnailslabs.com
                 </a>
-                <p className="text-white/80 text-base md:text-lg leading-relaxed max-w-2xl text-center md:text-left">
-                Transform your content with our <span className="text-white font-semibold">AI-powered thumbnail generator.</span> <br className="hidden md:block" />
-                Choose from three powerful options:
-                <span className="block mt-4 md:mt-3 flex flex-wrap items-center justify-center md:justify-start gap-3 text-sm md:text-base">
-                  <span className="inline-flex items-center text-blue-400 whitespace-nowrap">• Text to Thumbnail</span>
-                  <span className="hidden md:inline-block mx-1 text-white/40">|</span>
-                  <span className="inline-flex items-center text-purple-400 whitespace-nowrap">• Face to Thumbnail</span>
-                  <span className="hidden md:inline-block mx-1 text-white/40">|</span>
-                  <span className="inline-flex items-center text-green-400 whitespace-nowrap">• YouTube to Thumbnail</span>
-                </span>
-              </p>
+          
 
               </div>
 
@@ -474,8 +464,19 @@ export default function Dashboard() {
                         }`}
                       >
                         <Icon className="w-6 h-6 text-white" />
-                        <div className="text-xs text-white/60">
-                          {tab.id === 'title' ? '10 Credits' : '20 Credits'}
+                        <div className="flex flex-col items-center gap-1">
+                          <div className="text-xs text-white/60">
+                            {tab.id === 'title' ? '10 Credits' : '20 Credits'}
+                          </div>
+                          <div className={`text-xs font-medium ${
+                            tab.id === 'title' ? 'text-blue-400' :
+                            tab.id === 'image' ? 'text-purple-400' :
+                            'text-green-400'
+                          }`}>
+                            {tab.id === 'title' ? ' Text to Thumbnail' :
+                             tab.id === 'image' ? ' Face to Thumbnail' :
+                             ' YouTube to Thumbnail'}
+                          </div>
                         </div>
                       </button>
                     );
