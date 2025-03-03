@@ -28,7 +28,7 @@ Key requirements:
 1. Maintain similar color palette, composition layout, and typography style.
 2. Include the new title "${videoTitle}" as the main text in the thumbnail.
 3. The prompt must be suitable for a 16:9 YouTube thumbnail.
-4. The description should briefly mention the desired lighting or atmosphere if relevant (e.g., “bright and energetic,” “dramatic shadows,” etc.).
+4. The description should briefly mention the desired lighting or atmosphere if relevant (e.g., "bright and energetic," "dramatic shadows," etc.).
 5. Keep the prompt under 60 words if possible.
 
 Provide **only** the final text prompt to be sent to the image-generation model.`,
@@ -82,37 +82,99 @@ async function analyzeImageWithGroq(imageUrl, prompt, videoTitle) {
   }
 }
 
+async function generateImageWithReplicate(prompt, { width, height }, referenceImage = null) {
+  try {
+    console.log('Generating image with Replicate fallback:', { prompt, width, height });
+    
+    // Calculate aspect ratio for Replicate
+    let aspectRatio = width === 1280 && height === 720 ? "16:9" : "9:16";
+    
+    const output = await replicate.run(
+      "bytedance/hyper-flux-8step:81946b1e09b256c543b35f37333a30d0d02ee2cd8c4f77cd915873a1ca622bad",
+      {
+        input: {
+          prompt,
+          aspect_ratio: aspectRatio,
+          num_outputs: 1,
+          guidance_scale: 3.5,
+          num_inference_steps: 30,
+          output_format: "webp",
+          image: referenceImage
+        }
+      }
+    );
+
+    if (!output || !output[0]) {
+      throw new Error('Failed to generate image with Replicate');
+    }
+
+    return { data: [{ url: output[0] }] };
+  } catch (error) {
+    console.error('Error generating image with Replicate:', error);
+    throw error;
+  }
+}
+
 async function generateImageWithNebiusAI(prompt, { width, height }, referenceImage = null) {
   try {
     console.log('Generating image with Nebius AI:', { prompt, width, height });
-    const response = await fetch('https://api.studio.nebius.ai/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.NEBIUS_API_KEY}`
-      },
-      body: JSON.stringify({
-        prompt,
-        model: "black-forest-labs/flux-dev",
-        n: 1,
-        width,
-        height,
-        response_extension: "webp",
-        num_inference_steps: 30,
-        image: referenceImage
-      })
+
+    // Create a promise that rejects after 30 seconds
+    const timeout = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Nebius AI timeout after 30 seconds'));
+      }, 20000);  // 30000 milliseconds = 30 seconds
     });
 
-    if (!response.ok) {
-      throw new Error('Something went wrong. Please try again');
+    // Create the Nebius AI request promise
+    const nebiusRequest = async () => {
+      const response = await fetch('https://api.studio.nebius.ai/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEBIUS_API_KEY}`
+        },
+        body: JSON.stringify({
+          prompt,
+          model: "black-forest-labs/flux-dev",
+          n: 1,
+          width,
+          height,
+          response_extension: "webp",
+          num_inference_steps: 30,
+          image: referenceImage
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Nebius AI failed to generate image');
+      }
+
+      const data = await response.json();
+      if (!data || !data.data?.[0]?.url) {
+        throw new Error('Nebius AI returned invalid data');
+      }
+
+      return data;
+    };
+
+    // Race between the timeout and the actual request
+    try {
+      const result = await Promise.race([nebiusRequest(), timeout]);
+      console.log('Successfully generated image with Nebius AI');
+      return result;
+    } catch (error) {
+      if (error.message.includes('timeout')) {
+        console.log('Nebius AI timed out after 30 seconds, falling back to Replicate');
+      } else {
+        console.log('Nebius AI failed:', error.message);
+      }
+      return await generateImageWithReplicate(prompt, { width, height }, referenceImage);
     }
 
-    const data = await response.json();
-    console.log('Successfully generated image with Nebius AI');
-    return data;
   } catch (error) {
-    console.error('Error generating image with Nebius AI:', error);
-    throw new Error('Something went wrong. Please try again');
+    console.error('Error in generateImageWithNebiusAI:', error);
+    return await generateImageWithReplicate(prompt, { width, height }, referenceImage);
   }
 }
 
@@ -215,7 +277,7 @@ export const YoutubeThumbnailService = {
         }
         generatedImageUrl = replicateOutput[0];
       } else {
-        // Case 1 & 2: Without user photo - Use Nebius AI
+        // Case 1 & 2: Without user photo - Use Nebius AI with fallback to Replicate
         const groqPrompt = GROQ_PROMPTS[generationOption] || GROQ_PROMPTS.style;
         const imageAnalysis = await analyzeImageWithGroq(youtubeThumbnailUrl, groqPrompt, videoTitle);
         

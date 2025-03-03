@@ -185,13 +185,7 @@ export function Hero() {
                   <ArrowRight className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                 </button>
                 
-                <button 
-                  onClick={() => window.open('https://forms.gle/Y7e4sTm49LpGXdWV9', '_blank')}
-                  className="px-4 py-2 lg:px-6 lg:py-3 text-sm lg:text-base bg-blue-600 hover:bg-blue-700 rounded-full font-semibold flex items-center gap-2 transition-all shadow-lg hover:shadow-blue-500/25"
-                >
-                  Custom Thumbnails
-                  <ArrowRight className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
-                </button>
+                
               </div>
               <p className="text-sm text-gray-400 -mt-6 mb-10">No credit card required</p>
               

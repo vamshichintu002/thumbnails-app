@@ -1,8 +1,13 @@
 import { supabase } from './supabase.js';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import Replicate from "replicate";
 
 dotenv.config();
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_TOKEN,
+});
+
 async function enhancePromptWithGroq(userText) {
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -43,6 +48,44 @@ async function enhancePromptWithGroq(userText) {
   }
 }
 
+async function generateImageWithReplicate(prompt, { width, height }) {
+  try {
+    console.log('Generating image with Replicate fallback:', { prompt, width, height });
+    
+    // Calculate aspect ratio for Replicate
+    let aspectRatio = width === 1280 && height === 720 ? "16:9" : "9:16";
+    
+    const output = await replicate.run(
+      "bytedance/hyper-flux-8step:81946b1e09b256c543b35f37333a30d0d02ee2cd8c4f77cd915873a1ca622bad",
+      {
+        input: {
+          prompt,
+          aspect_ratio: aspectRatio,
+          num_outputs: 1,
+          guidance_scale: 3.5,
+          num_inference_steps: 30,
+          output_format: "webp"
+        }
+      }
+    );
+
+    if (!output || !output[0]) {
+      throw new Error('Failed to generate image with Replicate');
+    }
+
+    // Fetch the image data
+    const imageResponse = await fetch(output[0]);
+    if (!imageResponse.ok) {
+      throw new Error('Failed to fetch generated image from Replicate');
+    }
+
+    return { data: [{ url: output[0] }] };
+  } catch (error) {
+    console.error('Error generating image with Replicate:', error);
+    throw error;
+  }
+}
+
 async function generateImageWithNebiusAI(prompt, { width, height }, referenceImage = null) {
   try {
     // Ensure prompt doesn't exceed length limit
@@ -51,34 +94,63 @@ async function generateImageWithNebiusAI(prompt, { width, height }, referenceIma
     }
     
     console.log('Generating image with Nebius AI:', { prompt, width, height });
-    const response = await fetch('https://api.studio.nebius.ai/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.NEBIUS_API_KEY}`
-      },
-      body: JSON.stringify({
-        prompt,
-        model: "black-forest-labs/flux-dev",
-        n: 1,
-        width,
-        height,
-        response_extension: "webp",
-        num_inference_steps: 30,
-        image: referenceImage
-      })
+
+    // Create a promise that rejects after 30 seconds
+    const timeout = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Nebius AI timeout after 30 seconds'));
+      }, 30000);
     });
 
-    if (!response.ok) {
-      throw new Error('Something went wrong. Please try again');
+    // Create the Nebius AI request promise
+    const nebiusRequest = async () => {
+      const response = await fetch('https://api.studio.nebius.ai/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEBIUS_API_KEY}`
+        },
+        body: JSON.stringify({
+          prompt,
+          model: "black-forest-labs/flux-dev",
+          n: 1,
+          width,
+          height,
+          response_extension: "webp",
+          num_inference_steps: 30,
+          image: referenceImage
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Nebius AI failed to generate image');
+      }
+
+      const data = await response.json();
+      if (!data || !data.data?.[0]?.url) {
+        throw new Error('Nebius AI returned invalid data');
+      }
+
+      return data;
+    };
+
+    // Race between the timeout and the actual request
+    try {
+      const result = await Promise.race([nebiusRequest(), timeout]);
+      console.log('Successfully generated image with Nebius AI');
+      return result;
+    } catch (error) {
+      if (error.message.includes('timeout')) {
+        console.log('Nebius AI timed out after 30 seconds, falling back to Replicate');
+      } else {
+        console.log('Nebius AI failed:', error.message);
+      }
+      return await generateImageWithReplicate(prompt, { width, height });
     }
 
-    const data = await response.json();
-    console.log('Successfully generated image with Nebius AI');
-    return data;
   } catch (error) {
-    console.error('Error generating image with Nebius AI:', error);
-    throw new Error('Something went wrong. Please try again');
+    console.error('Error in generateImageWithNebiusAI:', error);
+    return await generateImageWithReplicate(prompt, { width, height });
   }
 }
 
